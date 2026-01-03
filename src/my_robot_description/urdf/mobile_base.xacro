@@ -53,7 +53,6 @@
     </link>
 
     <link name="base_footprint_link">
-        
     </link>
     <xacro:wheel_visual name="right_wheel"/>
     <xacro:wheel_visual name="left_wheel"/>
