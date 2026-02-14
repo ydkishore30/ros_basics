@@ -1,23 +1,22 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution, Command
 
 def generate_launch_description():
 
+    # Find description package
     description_pkg = FindPackageShare("my_robot_description")
-    bringup_pkg = FindPackageShare("my_robot_bringup")
-    gazebo_pkg = FindPackageShare("gazebo_ros")
 
-    # URDF / Xacro
+    # Xacro file
     xacro_file = PathJoinSubstitution([
         description_pkg,
         "urdf",
         "my_robot.urdf.xacro"
     ])
 
+    # Convert Xacro -> URDF
     robot_description = Command(["xacro ", xacro_file])
 
     # Robot State Publisher
@@ -27,48 +26,30 @@ def generate_launch_description():
         output="screen",
         parameters=[{
             "use_sim_time": True,
-            "robot_description": robot_description,
-            "ignore_timestamp": True,
-            "publish_frequency": 50.0
-        }],
-        remappings=[
-            ("/joint_states", "/joint_states")
-        ]
+            "robot_description": robot_description
+        }]
     )
 
-    # Joint State Publisher - reads from Gazebo joint states
+    # Joint State Publisher
     joint_state_publisher = Node(
         package="joint_state_publisher",
-        executable="joint_state_publisher",
-        name="joint_state_publisher",
-        parameters=[{"use_sim_time": True}]
+        executable="joint_state_publisher"
     )
 
-    # RViz2
-    rviz2 = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        output="screen",
-        parameters=[{"use_sim_time": True}],
-        arguments=["-d", PathJoinSubstitution([description_pkg, "rviz", "gazebo.rviz"])]
+    # Start Gazebo Harmonic with ground
+    gazebo = ExecuteProcess(
+        cmd=["gz", "sim", "-v", "4", "-r", "empty.sdf"],
+        output="screen"
     )
 
-    # Launch Gazebo
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([gazebo_pkg, "launch", "gazebo.launch.py"])
-        ]),
-        launch_arguments={'verbose': 'true'}.items()
-    )
-
-    # Spawn robot into Gazebo
+    # Spawn robot slightly above ground
     spawn_robot = Node(
-        package="gazebo_ros",
-        executable="spawn_entity.py",
+        package="ros_gz_sim",
+        executable="create",
         arguments=[
+            "-name", "my_robot",
             "-topic", "robot_description",
-            "-entity", "my_robot"
+            "-z", "0.2"
         ],
         output="screen"
     )
@@ -77,6 +58,5 @@ def generate_launch_description():
         joint_state_publisher,
         robot_state_publisher,
         gazebo,
-        spawn_robot,
-        rviz2
+        spawn_robot
     ])
