@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!-- <gazebo reference="castor_wheel_link">
+    <multi_friction>
+        <friction>
+            <ode>
+                <mu>0.8</mu>
+                <mu2>0.8</mu2>
+            </ode>
+        </friction>
+    </multi_friction>
+  </gazebo> -->
+
+<gazebo>
+  <plugin
+    filename="gz-sim-diff-drive-system"
+    name="gz::sim::systems::DiffDrive">
+
+    <!-- Joints -->
+    <left_joint>base_to_left_wheel</left_joint>
+    <right_joint>base_to_right_wheel</right_joint>
+
+    <!-- Robot geometry -->
+    <wheel_separation>0.45</wheel_separation>
+    <wheel_radius>0.1</wheel_radius>
+
+    <!-- Topics -->
+    <topic>cmd_vel</topic>
+    <odom_topic>odom</odom_topic>
+
+    <!-- Frames -->
+    <frame_id>base_footprint_link</frame_id>
+
+    <!-- IMPORTANT FIX -->
+    <command_timeout>0.5</command_timeout>
+    <publish_tf>true</publish_tf>
+
+  </plugin>
+</gazebo>
+
+
+  <!-- Gazebo materials -->
+
+  <gazebo reference="base_link">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <gazebo reference="right_wheel_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+  <gazebo reference="left_wheel_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+  <gazebo reference="castor_wheel_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+<gazebo>
+  <plugin
+    filename="gz-joint-state-publisher-system"
+    name="gz::sim::systems::JointStatePublisher">
+    <joint_name>base_to_left_wheel</joint_name>
+    <joint_name>base_to_right_wheel</joint_name>
+  </plugin>
+</gazebo>
+
+</robot>

@@ -79,12 +79,18 @@
         <child link="right_wheel_link"/>
         <origin xyz="-${wheel_x_offset} -${wheel_y_offset} 0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
+                      <!-- ADD HERE -->
+          <limit effort="10.0" velocity="10.0"/>
+  <dynamics damping="1.0" friction="1.0"/>
     </joint>
     <joint name="base_to_left_wheel" type="continuous">
         <parent link="base_link"/>
         <child link="left_wheel_link"/>
         <origin xyz="-${wheel_x_offset} ${wheel_y_offset} 0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
+              <!-- ADD HERE -->
+          <limit effort="10.0" velocity="10.0"/>
+  <dynamics damping="1.0" friction="1.0"/>
     </joint>
     <joint name="base_to_castor_wheel" type="fixed">
         <parent link="base_link"/>
