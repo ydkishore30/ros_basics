@@ -1,0 +1,23 @@
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_message_type: "rosgraph_msgs/Clock"
+  gz_message_type: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "joint_states"
+  gz_topic_name: "/model/my_robot/joint_state"
+  ros_message_type: "sensor_msgs/JointState"
+  gz_message_type: "gz.msgs.Model"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "tf"
+  gz_topic_name: "/tf"
+  ros_message_type: "tf2_msgs/TFMessage"
+  gz_message_type: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/cmd_vel"
+  gz_topic_name: "/model/my_robot/cmd_vel"
+  ros_message_type: "geometry_msgs/Twist"
+  gz_message_type: "gz.msgs.Twist"
+  direction: ROS_TO_GZ

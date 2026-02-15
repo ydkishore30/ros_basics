@@ -13,7 +13,8 @@ def generate_launch_description():
     xacro_file = PathJoinSubstitution([
         description_pkg,
         "urdf",
-        "my_robot.urdf.xacro"
+        "my_robot.urdf.xacro",
+        
     ])
 
     # Convert Xacro -> URDF
@@ -30,10 +31,16 @@ def generate_launch_description():
         }]
     )
 
-    # Joint State Publisher
-    joint_state_publisher = Node(
-        package="joint_state_publisher",
-        executable="joint_state_publisher"
+    # Gazebo-ROS Bridge
+    bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        parameters=[PathJoinSubstitution([
+            description_pkg,
+            "config",
+            "gazebo_bridge.yaml"
+        ])],
+        output="screen"
     )
 
     # Start Gazebo Harmonic with ground
@@ -55,8 +62,21 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        joint_state_publisher,
         robot_state_publisher,
         gazebo,
         spawn_robot
+            ,
+            bridge,
+            # Launch RViz2 with my_robot.rviz config
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
+                output="screen",
+                arguments=["-d", PathJoinSubstitution([
+                    description_pkg,
+                    "rviz",
+                    "my_robot.rviz"
+                ])]
+            )
     ])
