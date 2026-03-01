@@ -53,17 +53,18 @@
     <material>Gazebo/Grey</material>
   </gazebo>
 
-  <gazebo reference="castor_wheel_link">
+  <gazebo reference="castor_wheel_link1">
     <material>Gazebo/Grey</material>
   </gazebo>
 
 <gazebo>
   <plugin
-    filename="gz-joint-state-publisher-system"
+    filename="gz-sim-joint-state-publisher-system"
     name="gz::sim::systems::JointStatePublisher">
     <joint_name>base_to_left_wheel</joint_name>
     <joint_name>base_to_right_wheel</joint_name>
   </plugin>
 </gazebo>
+
 
 </robot>
