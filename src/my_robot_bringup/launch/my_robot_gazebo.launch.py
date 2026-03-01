@@ -33,19 +33,35 @@ def generate_launch_description():
 
     # Gazebo-ROS Bridge
     bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        parameters=[PathJoinSubstitution([
+    package="ros_gz_bridge",
+    executable="parameter_bridge",
+    parameters=[{
+        "config_file": PathJoinSubstitution([
             description_pkg,
             "config",
             "gazebo_bridge.yaml"
-        ])],
+        ])
+    }],
+    output="screen"
+)
+    controller_manager = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[{
+            "robot_description": robot_description,
+            "use_sim_time": True
+        }], 
+    )
+    
+    differential_drive_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["diff_drive_controller", "--controller-manager", "/controller_manager"],
         output="screen"
     )
-
     # Start Gazebo Harmonic with ground
     gazebo = ExecuteProcess(
-        cmd=["gz", "sim", "-v", "4", "-r", "empty.sdf"],
+        cmd=["gz", "sim", "-v", "4", "-r", "/home/ubuntu/ros_basics/src/my_robot_description/worlds/sample.sdf"],
         output="screen"
     )
 
@@ -67,7 +83,8 @@ def generate_launch_description():
         spawn_robot
             ,
             bridge,
-            # Launch RViz2 with my_robot.rviz config
+            controller_manager,
+            differential_drive_controller,
             Node(
                 package="rviz2",
                 executable="rviz2",
