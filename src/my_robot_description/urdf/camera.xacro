@@ -1,74 +1,93 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <!-- Camera properties -->
-    <xacro:property name="camera_length" value="0.05" />
-    <xacro:property name="camera_width" value="0.05" />
-    <xacro:property name="camera_height" value="0.05" />
+  <!-- ================= CAMERA PROPERTIES ================= -->
+  <xacro:property name="camera_length" value="0.05"/>
+  <xacro:property name="camera_width" value="0.05"/>
+  <xacro:property name="camera_height" value="0.05"/>
 
-    <!-- Camera link -->
-    <link name="camera_link">
-        <visual>
-            <geometry>
-                <box size="${camera_length} ${camera_width} ${camera_height}" />
-            </geometry>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <material name="red"/>
-        </visual>
-        <collision>
-            <geometry>
-                <box size="${camera_length} ${camera_width} ${camera_height}" />
-            </geometry>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-        </collision>
-        <xacro:box_inertia m="0.1" x="${camera_length}" y="${camera_width}" z="${camera_height}" 
-        o_xyz="0 0 0" o_rpy="0 0 0"/>
-    </link>
+  <!-- ================= CAMERA LINK ================= -->
+  <link name="camera_link">
 
-    <!-- Camera optical link -->
-    <link name="camera_link_optical">
-    </link>
+    <visual>
+      <geometry>
+        <box size="${camera_length} ${camera_width} ${camera_height}"/>
+      </geometry>
+      <material name="Grey">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
 
-    <!-- Camera joint -->
-    <joint name="camera_joint" type="fixed">
-        <parent link="base_link"/>
-        <child link="camera_link"/>
-        <origin xyz="${base_length/2} 0 ${base_height + camera_height/2}" rpy="0 0 0"/>
-    </joint>
+    <collision>
+      <geometry>
+        <box size="${camera_length} ${camera_width} ${camera_height}"/>
+      </geometry>
+    </collision>
 
-    <!-- Camera optical joint -->
-    <joint name="camera_optical_joint" type="fixed">
-        <parent link="camera_link"/>
-        <child link="camera_link_optical"/>
-        <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
-    </joint>
-<gazebo reference="camera_link">
-  <material>Gazebo/Red</material>
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia
+        ixx="0.0001" ixy="0.0" ixz="0.0"
+        iyy="0.0001" iyz="0.0"
+        izz="0.0001"/>
+    </inertial>
 
-  <sensor name="camera" type="camera">
-    <pose>0 0 0 0 0 0</pose>
-    <visualize>true</visualize>
-    <update_rate>30</update_rate>
+  </link>
 
-    <camera>
-      <horizontal_fov>1.047</horizontal_fov>
-      <image>
-        <format>R8G8B8</format>
-        <width>640</width>
-        <height>480</height>
-      </image>
-      <clip>
-        <near>0.1</near>
-        <far>100</far>
-      </clip>
-    </camera>
+  <!-- ================= FIXED JOINT TO BASE ================= -->
+  <joint name="base_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.2 0 0.2" rpy="0 0 0"/>
+  </joint>
 
-    <!-- Gazebo Harmonic Camera System -->
-    <plugin
-      filename="gz-sim-camera-system"
-      name="gz::sim::systems::Camera"/>
-  </sensor>
-</gazebo>
+  <!-- ================= OPTICAL FRAME ================= -->
+  <link name="camera_link_optical"/>
 
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_link_optical"/>
+    <origin xyz="0 0 0" rpy="-1.5707 0 -1.5707"/>
+  </joint>
+
+  <!-- ================= GAZEBO SIM CAMERA SENSOR ================= -->
+  <gazebo reference="camera_link">
+    <sensor name="camera_sensor" type="camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+
+      <!-- VERY IMPORTANT FOR GZ SIM -->
+      <topic>camera</topic>
+
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+
+        <clip>
+          <near>0.1</near>
+          <far>20.0</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+        <optical_frame>camera_link_optical</optical_frame>
+        <camera_info_topic>/camera_info</camera_info_topic>
+      </camera>
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <visualize>true</visualize>
+      <topic>camera/image_raw</topic>
+      <frame_name>camera_link_optical</frame_name>
+    </sensor>
+  </gazebo>
 
 </robot>
