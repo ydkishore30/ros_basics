@@ -3,6 +3,8 @@ from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution, Command
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 
 def generate_launch_description():
 
@@ -44,56 +46,78 @@ def generate_launch_description():
     }],
     output="screen"
 )
-    controller_manager = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[{
-            "robot_description": robot_description,
-            "use_sim_time": True
-        }], 
-    )
+
     
-    differential_drive_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["diff_drive_controller", "--controller-manager", "/controller_manager"],
-        output="screen"
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+        )
+        
+
+    robot_controllers = PathJoinSubstitution(
+        [
+            FindPackageShare('my_robot_bringup'),
+            'config',
+            'my_robot_controllers.yaml',
+        ]
     )
+
+
+    diff_drive_controller_spawn = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'diff_drive_controller',
+            '--param-file',
+            robot_controllers,
+            ],
+    )
+
     # Start Gazebo Harmonic with ground
     gazebo = ExecuteProcess(
         cmd=["gz", "sim", "-v", "4", "-r", "/home/ubuntu/ros_basics/src/my_robot_description/worlds/sample.sdf"],
         output="screen"
     )
 
-    # Spawn robot slightly above ground
-    spawn_robot = Node(
-        package="ros_gz_sim",
-        executable="create",
-        arguments=[
-            "-name", "my_robot",
-            "-topic", "robot_description",
-            "-z", "0.2"
-        ],
-        output="screen"
+    gz_spawn_entity = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=['-topic', 'robot_description', '-name',
+                   'diff_drive', '-allow_renaming', 'true'],
     )
 
     return LaunchDescription([
         robot_state_publisher,
         gazebo,
-        spawn_robot
+        gz_spawn_entity,
+        bridge,
+        joint_state_broadcaster_spawner,
+        diff_drive_controller_spawn
+        # diff_drive_controller_spawn,
+        #         RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=gz_spawn_entity,
+        #         on_exit=[joint_state_broadcaster_spawner],
+        #     )
+        # ),
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=joint_state_broadcaster_spawner,
+        #         on_exit=[diff_drive_controller_spawn],
+        #     )
+        # )
             ,
-            bridge,
-            controller_manager,
-            differential_drive_controller,
-            Node(
-                package="rviz2",
-                executable="rviz2",
-                name="rviz2",
-                output="screen",
-                arguments=["-d", PathJoinSubstitution([
-                    description_pkg,
-                    "rviz",
-                    "my_robot.rviz"
-                ])]
-            )
+        Node(
+            package="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            output="screen",
+            arguments=["-d", PathJoinSubstitution([
+                description_pkg,
+                "rviz",
+                "my_robot.rviz"
+            ])]
+        )
     ])

@@ -1,21 +1,32 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <!-- ROS 2 Control configuration for mobile base -->
-  <ros2_control name="MobileBaseHardwareInterface" type="system">
+<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================= ROS2 CONTROL ================= -->
+  <ros2_control name="MobileBaseHardware" type="system">
     <hardware>
-      <plugin>mock_component/GenericSystem</plugin>
-    <param name="calculate_dynamics">true</param>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
 
     <joint name="base_to_left_wheel">
       <command_interface name="velocity"/>
-      <state_interface name="velocity"/>
       <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
+
     <joint name="base_to_right_wheel">
       <command_interface name="velocity"/>
-      <state_interface name="velocity"/>
       <state_interface name="position"/>
+      <state_interface name="velocity"/>
     </joint>
+
   </ros2_control>
+
+  <!-- ================= GAZEBO PLUGIN ================= -->
+<gazebo>
+  <plugin filename="gz_ros2_control-system"
+          name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
+ </plugin>
+</gazebo>
+
 </robot>
