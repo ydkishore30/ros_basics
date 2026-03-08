@@ -144,6 +144,27 @@ def generate_launch_description():
     )
 
     # ------------------------------
+    # Teleop (Keyboard Control)
+    # Converts Twist messages to TwistStamped for the diff_drive_controller
+    # Uncomment both nodes below to enable keyboard teleop
+    # ------------------------------
+    # Teleop node (publishes Twist to /cmd_vel)
+    teleop_node = Node(
+        package="teleop_twist_keyboard",
+        executable="teleop_twist_keyboard",
+        name="teleop_twist_keyboard",
+        output="screen"
+    )
+    
+    # Twist converter node (converts Twist to TwistStamped)
+    twist_converter_node = Node(
+        package="my_robot_bringup",
+        executable="twist_converter.py",
+        name="twist_converter",
+        output="screen"
+    )
+
+    # ------------------------------
     # Launch description
     # ------------------------------
     return LaunchDescription([
@@ -153,5 +174,8 @@ def generate_launch_description():
         spawn_robot_after_gazebo,
         joint_state_after_spawn,
         diff_drive_after_joint,
-        rviz_node
+        rviz_node,
+        # Keyboard teleop with twist converter
+        teleop_node,
+        twist_converter_node,
     ])
