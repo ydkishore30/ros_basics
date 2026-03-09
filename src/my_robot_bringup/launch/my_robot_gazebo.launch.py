@@ -57,16 +57,21 @@ def generate_launch_description():
     )
 
     # ------------------------------
-    # ROS-Gazebo Bridge
+    # ROS-Gazebo Bridge Configuration
+    # Uses existing gazebo_bridge.yaml from my_robot_description
     # ------------------------------
-    # Bridge
+    bridge_config = PathJoinSubstitution([
+        FindPackageShare('my_robot_description'),
+        'config',
+        'gazebo_bridge.yaml',
+    ])
+
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=[
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'
-        ],
+        parameters=[{
+            'config_file': bridge_config
+        }],
         output='screen'
     )
 
