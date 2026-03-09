@@ -149,16 +149,28 @@ def generate_launch_description():
     )
 
     # ------------------------------
-    # Teleop (Keyboard Control)
-    # Converts Twist messages to TwistStamped for the diff_drive_controller
-    # Uncomment both nodes below to enable keyboard teleop
+    # Teleop (Gamepad Joystick Control)
+    # Converts joystick input to Twist messages and then to TwistStamped
     # ------------------------------
-    # Teleop node (publishes Twist to /cmd_vel)
-    teleop_node = Node(
-        package="teleop_twist_keyboard",
-        executable="teleop_twist_keyboard",
-        name="teleop_twist_keyboard",
+    # Joy node (reads gamepad input)
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
         output="screen"
+    )
+    
+    # Teleop node (converts joystick to Twist)
+    teleop_node = Node(
+        package="teleop_twist_joy",
+        executable="teleop_node",
+        name="teleop_twist_joy",
+        output="screen",
+        parameters=[PathJoinSubstitution([
+            FindPackageShare('my_robot_bringup'),
+            'config',
+            'teleop_joy.yaml',
+        ])]
     )
     
     # Twist converter node (converts Twist to TwistStamped)
@@ -180,7 +192,8 @@ def generate_launch_description():
         joint_state_after_spawn,
         diff_drive_after_joint,
         rviz_node,
-        # Keyboard teleop with twist converter
+        # Joystick control with twist converter
+        joy_node,
         teleop_node,
         twist_converter_node,
     ])
