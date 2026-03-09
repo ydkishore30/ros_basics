@@ -24,9 +24,9 @@
 
   <!-- Lidar joint (attach to base_link) -->
   <joint name="lidar_joint" type="fixed">
-    <parent link="base_footprint_link"/>
+    <parent link="base_link"/>
     <child link="lidar_link"/>
-    <origin xyz="0 0 ${base_height + lidar_height}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${base_height + lidar_height/2}" rpy="0 0 0"/>
   </joint>
 
   <!-- Gazebo Lidar sensor plugin -->
