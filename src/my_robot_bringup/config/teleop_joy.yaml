@@ -1,0 +1,22 @@
+teleop_twist_joy:
+  ros__parameters:
+    # Joystick axis mapping
+    axis_linear:
+      x: 4       # Right trigger (RT) for forward/backward
+    axis_angular:
+      z: 0       # Left stick horizontal (LX) for rotation
+    
+    # Scale factors
+    scale_linear:
+      x: 1.0     # Max linear velocity
+    scale_angular:
+      z: 1.0     # Max angular velocity
+    
+    # Dead zone (minimum input to register)
+    enable_button: 0          # A button to enable
+    enable_turbo_button: 5    # X button for turbo mode
+    
+    scale_linear_turbo:
+      x: 1.5                  # Turbo mode linear scale
+    scale_angular_turbo:
+      z: 1.5                  # Turbo mode angular scale
