@@ -7,7 +7,7 @@ This guide explains how to use a gamepad joystick to control the my_robot.
 Install the required ROS2 packages:
 
 ```bash
-sudo apt install ros-humble-joy ros-humble-teleop-twist-joy
+sudo apt install ros-jazzy-joy ros-jazzy-teleop-twist-joy
 ```
 
 ## Hardware Setup
