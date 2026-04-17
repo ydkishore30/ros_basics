@@ -40,7 +40,7 @@ def generate_launch_description():
     # ------------------------------
     gazebo = ExecuteProcess(
         cmd=["gz", "sim", "-v", "4", "-r",
-             "/home/dinesh/ros_basics/src/my_robot_description/worlds/sample.sdf"],
+             "/home/dinesh/ros_basics/src/my_robot_description/worlds/table.sdf"],
         output="screen"
     )
 

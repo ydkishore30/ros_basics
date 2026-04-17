@@ -41,7 +41,7 @@
 
 ## Teleop / Robot Control
 
-### Option 1: Keyboard Teleop (Recommended)
+### Option 1: Keyboard Teleop (Recommended)Y
 
 The robot controller expects `TwistStamped` messages, but `teleop_twist_keyboard` publishes `Twist` messages by default. A converter node is included to handle this conversion automatically.
 
