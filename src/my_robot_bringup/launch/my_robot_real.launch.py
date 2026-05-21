@@ -1,10 +1,10 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
 from launch.conditions import IfCondition
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.event_handlers import OnProcessExit, OnProcessStart
 
 def generate_launch_description():
 
@@ -31,50 +31,10 @@ def generate_launch_description():
         executable="robot_state_publisher",
         output="screen",
         parameters=[{
-            "use_sim_time": True,
+            "use_sim_time": False,  # Set to False for real hardware
             "robot_description": robot_description
         }]
     )
-
-    # ------------------------------
-    # Gazebo
-    # ------------------------------
-    gazebo = ExecuteProcess(
-        cmd=["gz", "sim", "-v", "4", "-r", "empty.sdf"],
-        output="screen"
-    )
-
-    # ------------------------------
-    # Spawn robot entity in Gazebo
-    # ------------------------------
-    gz_spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
-        arguments=['-topic', 'robot_description',
-                   '-name', 'my_robot',
-                   '-allow_renaming', 'true'],
-    )
-
-    # ------------------------------
-    # ROS-Gazebo Bridge Configuration
-    # Uses existing gazebo_bridge.yaml from my_robot_description
-    # ------------------------------
-    bridge_config = PathJoinSubstitution([
-        FindPackageShare('my_robot_description'),
-        'config',
-        'gazebo_bridge.yaml',
-    ])
-
-    bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        parameters=[{
-            'config_file': bridge_config
-        }],
-        output='screen'
-    )
-
 
     # ------------------------------
     # Controller YAML
@@ -120,24 +80,7 @@ def generate_launch_description():
     )
 
     # ------------------------------
-    # Event handlers for sequential startup
-    # ------------------------------
-    # Spawn robot entity after Gazebo starts
-    spawn_robot_after_gazebo = RegisterEventHandler(
-        event_handler=OnProcessStart(
-            target_action=gazebo,
-            on_start=[gz_spawn_entity]
-        )
-    )
-
-    # Start controller_manager after robot is spawned
-    controller_manager_after_spawn = RegisterEventHandler(
-        event_handler=OnProcessStart(
-            target_action=gz_spawn_entity,
-            on_start=[controller_manager]
-        )
-    )
-
+    # Event handlers for ordered controller startup
     # Start joint_state_broadcaster after controller_manager
     joint_state_after_controller = RegisterEventHandler(
         event_handler=OnProcessStart(
@@ -146,7 +89,7 @@ def generate_launch_description():
         )
     )
 
-    # Start diff_drive_controller after joint_state_broadcaster
+    # Start diff_drive_controller after joint_state_broadcaster finishes
     diff_drive_after_joint = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
@@ -183,7 +126,7 @@ def generate_launch_description():
         name="joy_node",
         output="screen"
     )
-    
+
     # Teleop node (converts joystick to Twist)
     teleop_node = Node(
         package="teleop_twist_joy",
@@ -196,7 +139,7 @@ def generate_launch_description():
             'teleop_joy.yaml',
         ])]
     )
-    
+
     # Twist converter node (converts Twist to TwistStamped)
     twist_converter_node = Node(
         package="my_robot_bringup",
@@ -215,10 +158,7 @@ def generate_launch_description():
             description='Whether to launch RViz2',
         ),
         robot_state_publisher,
-        gazebo,
-        bridge,
-        spawn_robot_after_gazebo,
-        controller_manager_after_spawn,
+        controller_manager,
         joint_state_after_controller,
         diff_drive_after_joint,
         rviz_node,

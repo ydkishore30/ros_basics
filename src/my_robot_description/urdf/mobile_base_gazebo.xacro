@@ -29,7 +29,7 @@
     <odom_topic>odom</odom_topic>
 
     <!-- Frames -->
-    <frame_id>base_footprint_link</frame_id>
+    <frame_id>base_footprint</frame_id>
 
     <!-- IMPORTANT FIX -->
     <command_timeout>0.5</command_timeout>

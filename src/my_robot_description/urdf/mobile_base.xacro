@@ -9,6 +9,7 @@
     <xacro:property name="base_height" value="0.2" />
     <xacro:property name="wheel_x_offset" value="${base_length/4}" />
     <xacro:property name="wheel_y_offset" value="${base_width/2 + 0.025}" />
+    <xacro:property name="wheel_separation" value="${wheel_y_offset * 2}" />
     <xacro:property name="castor_x_offset" value="${base_length/3}" />
 
 
@@ -52,7 +53,7 @@
 
     </link>
 
-    <link name="base_footprint_link">
+    <link name="base_footprint">
     </link>
     <xacro:wheel_visual name="right_wheel"/>
     <xacro:wheel_visual name="left_wheel"/>
@@ -79,26 +80,25 @@
         <child link="right_wheel_link"/>
         <origin xyz="-${wheel_x_offset} -${wheel_y_offset} 0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
-                      <!-- ADD HERE -->
-          <limit effort="10.0" velocity="10.0"/>
-  <dynamics damping="1.0" friction="1.0"/>
+        <limit effort="10.0" velocity="10.0"/>
+        <dynamics damping="1.0" friction="1.0"/>
     </joint>
     <joint name="base_to_left_wheel" type="continuous">
         <parent link="base_link"/>
         <child link="left_wheel_link"/>
         <origin xyz="-${wheel_x_offset} ${wheel_y_offset} 0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
-              <!-- ADD HERE -->
-          <limit effort="10.0" velocity="10.0"/>
-  <dynamics damping="1.0" friction="1.0"/>
+        <limit effort="10.0" velocity="10.0"/>
+        <dynamics damping="1.0" friction="1.0"/>
     </joint>
+
     <joint name="base_to_castor_wheel" type="fixed">
         <parent link="base_link"/>
         <child link="castor_wheel_link"/>
         <origin xyz="${castor_x_offset} 0 0" rpy="0 0 0"/>
     </joint>
     <joint name="base_joint" type="fixed">
-        <parent link="base_footprint_link"/>
+        <parent link="base_footprint"/>
         <child link="base_link"/>
         <origin xyz="0 0 .1" rpy="0 0 0"/>
         <axis xyz="0 0 1"/>

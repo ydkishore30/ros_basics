@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<library path="hardware">
+  <class
+    name="hardware/MyHardware"
+    type="hardware::MyHardware"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Custom diff drive hardware interface
+    </description>
+  </class>
+</library>

@@ -1,22 +1,36 @@
 teleop_twist_joy:
   ros__parameters:
-    # Joystick axis mapping
-    axis_linear:
-      x: 4       # Right trigger (RT) for forward/backward
-    axis_angular:
-      z: 0       # Left stick horizontal (LX) for rotation
-    
-    # Scale factors
-    scale_linear:
-      x: 1.0     # Max linear velocity
-    scale_angular:
-      z: 1.0     # Max angular velocity
-    
-    # Dead zone (minimum input to register)
-    enable_button: 0          # A button to enable
-    enable_turbo_button: 5    # X button for turbo mode
-    
-    scale_linear_turbo:
-      x: 1.5                  # Turbo mode linear scale
-    scale_angular_turbo:
-      z: 1.5                  # Turbo mode angular scale
+
+    # ----------------------------
+    # AXIS MAPPING
+    # ----------------------------
+    # Xbox 360 typical mapping:
+    # axis 1 = left stick vertical (forward/back)
+    # axis 0 = left stick horizontal (turn)
+    axis_linear: 
+              x: 1
+    axis_angular: 
+              yaw: 4
+    # invert forward/back if needed (common fix)
+    scale_linear: 1.0
+    scale_angular: 1.0
+
+    # ----------------------------
+    # SAFETY (DEADMAN SWITCH)
+    # ----------------------------
+    require_enable_button: false  # Set to true to require holding a button to move
+    enable_button: 6   # A button (hold to move)
+
+    # ----------------------------
+    # TURBO MODE
+    # ----------------------------
+    require_turbo_button: false  # Set to true to require holding a button for turbo
+    enable_turbo_button: 5   # RB button
+
+    scale_linear_turbo: 1.5 
+    scale_angular_turbo: 1.5
+
+    # ----------------------------
+    # OPTIONAL: DEAD ZONE (helps stability)
+    # ----------------------------
+    deadzone: 0.05
