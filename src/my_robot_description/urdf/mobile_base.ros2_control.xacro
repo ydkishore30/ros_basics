@@ -8,8 +8,8 @@
       <param name="serial_port">/dev/ttyUSB0</param>
       <param name="baud_rate">115200</param>
       <param name="counts_per_rev">1260.0</param>
-      <param name="wheel_radius">0.1</param>
-      <param name="wheel_base">0.5</param>
+      <param name="wheel_radius">0.035</param>
+      <param name="wheel_base">0.34</param>
     </hardware>
 
     <joint name="base_to_left_wheel">
