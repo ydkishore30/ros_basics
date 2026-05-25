@@ -2,11 +2,6 @@
 set -e
 clear
 
-cd ~/ros_basics
-
-# Clean build
-rm -rf build install log
-
 # Build
 colcon build --symlink-install
 

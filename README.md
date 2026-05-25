@@ -114,3 +114,8 @@ For more help, see the ROS 2 and Gazebo documentation or contact the project mai
 
 
 ./src/my_robot_bringup/launch/build_source_launch.sh
+
+---
+Add following for ros2 control librarry 
+
+echo 'export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/jazzy/lib:$GZ_SIM_SYSTEM_PLUGIN_PATH' >> ~/.bashrc

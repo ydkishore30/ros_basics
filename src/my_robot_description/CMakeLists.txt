@@ -11,6 +11,8 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually
 # find_package(<dependency> REQUIRED)
 
+find_package(controller_manager REQUIRED)
+find_package(gz_ros2_control REQUIRED)
 
 install(
   DIRECTORY urdf launch rviz config

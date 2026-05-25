@@ -1,0 +1,22 @@
+{
+  "name": "ROS2 Jazzy Workspace",
+
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "ros",
+
+  "workspaceFolder": "/ros2_ws",
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/ros2_ws,type=bind",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-iot.vscode-ros",
+        "ms-vscode.cpptools",
+        "ms-python.python"
+      ]
+    }
+  },
+
+  "remoteUser": "root"
+}

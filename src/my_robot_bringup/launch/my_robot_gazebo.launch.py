@@ -40,7 +40,7 @@ def generate_launch_description():
     # Gazebo
     # ------------------------------
     gazebo = ExecuteProcess(
-        cmd=["gz", "sim", "-v", "4", "-r", "empty.sdf"],
+        cmd=["gz", "sim", "-v", "4", "-r", "/ros2_ws/src/my_robot_description/worlds/sample.sdf"],
         output="screen"
     )
 

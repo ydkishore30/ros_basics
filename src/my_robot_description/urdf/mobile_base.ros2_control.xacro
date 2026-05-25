@@ -4,12 +4,12 @@
   <!-- ================= ROS2 CONTROL ================= -->
   <ros2_control name="MobileBaseHardware" type="system">
     <hardware>
-      <plugin>hardware/MyHardware</plugin>
-      <param name="serial_port">/dev/ttyUSB0</param>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      <!-- <param name="serial_port">/dev/ttyUSB0</param>
       <param name="baud_rate">115200</param>
       <param name="counts_per_rev">1260.0</param>
       <param name="wheel_radius">0.035</param>
-      <param name="wheel_base">0.34</param>
+      <param name="wheel_base">0.34</param> -->
     </hardware>
 
     <joint name="base_to_left_wheel">
@@ -35,11 +35,10 @@
       <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
  </plugin>
 </gazebo> -->  <!-- ================= GAZEBO PLUGIN ================= -->
-<!-- <gazebo>
-  <plugin filename="gz_ros2_control-system"
-          name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+<gazebo>
+  <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
  </plugin>
-</gazebo> -->
+</gazebo>
 
 </robot>

@@ -1,0 +1,29 @@
+version: "2.0"
+
+services:
+  ros:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+    network_mode: host
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - QT_QPA_PLATFORM=xcb
+      - XAUTHORITY=/root/.Xauthority
+
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+
+     
+    devices:
+      - /dev/dri:/dev/dri
+
+    privileged: true
+
+    tty: true
+    stdin_open: true
