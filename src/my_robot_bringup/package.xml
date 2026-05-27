@@ -12,7 +12,14 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <depend>gz_ros2_control</depend>
-
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>my_robot_description</exec_depend>
+  <exec_depend>my_robot_slam</exec_depend>
+  <exec_depend>my_robot_navigation</exec_depend>
+  <exec_depend>my_robot_exploration</exec_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

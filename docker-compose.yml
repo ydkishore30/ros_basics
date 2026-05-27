@@ -1,4 +1,4 @@
-version: "2.0"
+version: "3.8"
 
 services:
   ros:
@@ -8,7 +8,21 @@ services:
 
     network_mode: host
 
+    # ============================================================
+    # GPU SUPPORT (IMPORTANT FIX)
+    # ============================================================
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
     environment:
+      # NVIDIA GPU
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+
+      # GUI
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - QT_QPA_PLATFORM=xcb
@@ -17,9 +31,7 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
-      - /tmp/.X11-unix:/tmp/.X11-unix:ro
 
-     
     devices:
       - /dev/dri:/dev/dri
 
