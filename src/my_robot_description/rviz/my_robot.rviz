@@ -73,6 +73,8 @@ Visualization Manager:
           Value: true
         castor_wheel_link:
           Value: true
+        imu_link:
+          Value: true
         left_wheel_link:
           Value: true
         lidar_link:
@@ -94,6 +96,8 @@ Visualization Manager:
                 camera_link_optical:
                   {}
               castor_wheel_link:
+                {}
+              imu_link:
                 {}
               left_wheel_link:
                 {}
@@ -140,6 +144,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         castor_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -301,7 +310,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.914421558380127
+      Distance: 0.9415104389190674
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -316,10 +325,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.11039914935827255
+      Pitch: 0.5803993344306946
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.21856427192688
+      Yaw: 0.4485628604888916
     Saved: ~
 Window Geometry:
   Camera:
@@ -341,5 +350,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1614
-  X: 66
-  Y: 149
+  X: 2095
+  Y: 62
