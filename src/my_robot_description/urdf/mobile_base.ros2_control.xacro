@@ -36,7 +36,7 @@
  </plugin>
 </gazebo> -->  <!-- ================= GAZEBO PLUGIN ================= -->
 <gazebo>
-  <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+  <plugin filename="/opt/ros/jazzy/lib/libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
  </plugin>
 </gazebo>

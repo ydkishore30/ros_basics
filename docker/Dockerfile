@@ -80,12 +80,8 @@ RUN /bin/bash -c "source /opt/ros/jazzy/setup.bash && \
 # ============================================================
 ENV TURTLEBOT3_MODEL=burger
 
-ENV GZ_SIM_RESOURCE_PATH=\
-/simulation_assets/worlds:\
-/simulation_assets/models:\
-/usr/share
 
-ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/jazzy/lib
+# ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/jazzy/lib
 
 # ============================================================
 # ROS sourcing

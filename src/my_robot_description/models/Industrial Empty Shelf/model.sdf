@@ -1,0 +1,218 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <model name="industrial_empty_shelf">
+    <static>true</static>
+
+    <!-- Medidas aproximadas:
+         X = 3.5 m largo
+         Y = 0.6 m profundidad
+         Z = 2.0 m altura
+    -->
+
+    <!-- BALDAS AMARILLAS -->
+    <link name="shelves">
+      <visual name="shelf_1_visual">
+        <pose>0 0 0.35 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+        <material>
+          <ambient>0.85 0.70 0.10 1</ambient>
+          <diffuse>0.85 0.70 0.10 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+        </material>
+      </visual>
+      <collision name="shelf_1_collision">
+        <pose>0 0 0.35 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+      </collision>
+
+      <visual name="shelf_2_visual">
+        <pose>0 0 0.80 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+        <material>
+          <ambient>0.85 0.70 0.10 1</ambient>
+          <diffuse>0.85 0.70 0.10 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+        </material>
+      </visual>
+      <collision name="shelf_2_collision">
+        <pose>0 0 0.80 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+      </collision>
+
+      <visual name="shelf_3_visual">
+        <pose>0 0 1.25 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+        <material>
+          <ambient>0.85 0.70 0.10 1</ambient>
+          <diffuse>0.85 0.70 0.10 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+        </material>
+      </visual>
+      <collision name="shelf_3_collision">
+        <pose>0 0 1.25 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+      </collision>
+
+      <visual name="shelf_4_visual">
+        <pose>0 0 1.70 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+        <material>
+          <ambient>0.85 0.70 0.10 1</ambient>
+          <diffuse>0.85 0.70 0.10 1</diffuse>
+          <specular>0.05 0.05 0.05 1</specular>
+        </material>
+      </visual>
+      <collision name="shelf_4_collision">
+        <pose>0 0 1.70 0 0 0</pose>
+        <geometry><box><size>3.5 0.6 0.04</size></box></geometry>
+      </collision>
+    </link>
+
+    <!-- LARGUEROS AMARILLOS -->
+    <link name="yellow_beams">
+      <visual name="front_beam_1">
+        <pose>0 -0.33 0.38 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="front_beam_1_col">
+        <pose>0 -0.33 0.38 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="back_beam_1">
+        <pose>0 0.33 0.38 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="back_beam_1_col">
+        <pose>0 0.33 0.38 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="front_beam_2">
+        <pose>0 -0.33 0.83 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="front_beam_2_col">
+        <pose>0 -0.33 0.83 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="back_beam_2">
+        <pose>0 0.33 0.83 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="back_beam_2_col">
+        <pose>0 0.33 0.83 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="front_beam_3">
+        <pose>0 -0.33 1.28 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="front_beam_3_col">
+        <pose>0 -0.33 1.28 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="back_beam_3">
+        <pose>0 0.33 1.28 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="back_beam_3_col">
+        <pose>0 0.33 1.28 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="front_beam_4">
+        <pose>0 -0.33 1.73 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="front_beam_4_col">
+        <pose>0 -0.33 1.73 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+
+      <visual name="back_beam_4">
+        <pose>0 0.33 1.73 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+        <material><ambient>0.85 0.70 0.10 1</ambient><diffuse>0.85 0.70 0.10 1</diffuse><specular>0.05 0.05 0.05 1</specular></material>
+      </visual>
+      <collision name="back_beam_4_col">
+        <pose>0 0.33 1.73 0 0 0</pose>
+        <geometry><box><size>3.6 0.05 0.08</size></box></geometry>
+      </collision>
+    </link>
+
+    <!-- POSTES NEGROS -->
+    <link name="black_posts">
+      <visual name="post_left_front">
+        <pose>-1.75 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_left_front_col">
+        <pose>-1.75 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+
+      <visual name="post_left_back">
+        <pose>-1.75 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_left_back_col">
+        <pose>-1.75 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+
+      <visual name="post_center_front">
+        <pose>0.45 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_center_front_col">
+        <pose>0.45 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+
+      <visual name="post_center_back">
+        <pose>0.45 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_center_back_col">
+        <pose>0.45 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+
+      <visual name="post_right_front">
+        <pose>1.75 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_right_front_col">
+        <pose>1.75 -0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+
+      <visual name="post_right_back">
+        <pose>1.75 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+        <material><ambient>0.0 0.0 0.0 1</ambient><diffuse>0.0 0.0 0.0 1</diffuse></material>
+      </visual>
+      <collision name="post_right_back_col">
+        <pose>1.75 0.33 1.0 0 0 0</pose>
+        <geometry><box><size>0.06 0.06 2.0</size></box></geometry>
+      </collision>
+    </link>
+
+  </model>
+</sdf>

@@ -31,7 +31,9 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
-
+      # - /home/dinesh/ros_basics/src/my_robot_description/gz_assets:/gz_assets
+      - /home/dinesh/ros_basics:/ros2_ws
+      - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
     devices:
       - /dev/dri:/dev/dri
 
