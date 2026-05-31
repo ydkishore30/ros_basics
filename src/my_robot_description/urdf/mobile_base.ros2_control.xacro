@@ -1,42 +1,42 @@
-<?xml version="1.0"?>
-<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<?xml version='1.0'?>
+<robot name='my_robot' xmlns:xacro='http://www.ros.org/wiki/xacro'>
 
   <!-- ================= ROS2 CONTROL ================= -->
-  <ros2_control name="MobileBaseHardware" type="system">
+  <ros2_control name='MobileBaseHardware' type='system'>
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-      <!-- <param name="serial_port">/dev/ttyUSB0</param>
-      <param name="baud_rate">115200</param>
-      <param name="counts_per_rev">1260.0</param>
-      <param name="wheel_radius">0.035</param>
-      <param name="wheel_base">0.34</param> -->
+      <!-- <param name='serial_port'>/dev/ttyUSB0</param>
+      <param name='baud_rate'>115200</param>
+      <param name='counts_per_rev'>1260.0</param>
+      <param name='wheel_radius'>0.035</param>
+      <param name='wheel_base'>0.34</param> -->
     </hardware>
 
-    <joint name="base_to_left_wheel">
-      <command_interface name="velocity"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-      <state_interface name="effort"/>
+    <joint name='base_to_left_wheel'>
+      <command_interface name='velocity'/>
+      <state_interface name='position'/>
+      <state_interface name='velocity'/>
+      <state_interface name='effort'/>
     </joint>
 
-    <joint name="base_to_right_wheel">
-      <command_interface name="velocity"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-      <state_interface name="effort"/>
+    <joint name='base_to_right_wheel'>
+      <command_interface name='velocity'/>
+      <state_interface name='position'/>
+      <state_interface name='velocity'/>
+      <state_interface name='effort'/>
     </joint>
 
   </ros2_control>
 
   <!-- ================= GAZEBO PLUGIN ================= -->
 <!-- <gazebo>
-  <plugin filename="gz_ros2_control-system"
-          name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+  <plugin filename='gz_ros2_control-system'
+          name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
       <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
  </plugin>
 </gazebo> -->  <!-- ================= GAZEBO PLUGIN ================= -->
 <gazebo>
-  <plugin filename="/opt/ros/jazzy/lib/libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+  <plugin filename='/opt/ros/jazzy/lib/libgz_ros2_control-system.so' name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
       <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
  </plugin>
 </gazebo>

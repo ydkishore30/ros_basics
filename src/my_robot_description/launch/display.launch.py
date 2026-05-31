@@ -1,6 +1,6 @@
 from launch import LaunchDescription
-from launch_ros.actions import Node
 from launch.substitutions import Command, PathJoinSubstitution
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -34,7 +34,7 @@ def generate_launch_description():
         arguments=['-d', PathJoinSubstitution([
             FindPackageShare('my_robot_description'),
             'rviz',
-            'my_robot.rviz'  # (optional config file)
+            'my_robot.rviz'
         ])]
     )
 

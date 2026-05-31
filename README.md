@@ -96,7 +96,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 You can manually publish velocity commands to control the robot's movement. Open a new terminal and run:
 
 ```bash
-ros2 topic pub /diff_drive_controller/cmd_vel geometry_msgs/msg/TwistStamped "{header: {frame_id: base_link}, twist: {linear: {x: -1.0}, angular: {z: 0.0}}}"
+ros2 topic pub /diff_drive_controller/cmd_vel geometry_msgs/msg/TwistStamped '{header: {frame_id: base_link}, twist: {linear: {x: -1.0}, angular: {z: 0.0}}}'
 ```
 
 **Parameters:**
@@ -119,3 +119,8 @@ For more help, see the ROS 2 and Gazebo documentation or contact the project mai
 Add following for ros2 control librarry 
 
 echo 'export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/jazzy/lib:$GZ_SIM_SYSTEM_PLUGIN_PATH' >> ~/.bashrc
+
+
+./src/my_robot_bringup/launch/build_source_launch.sh
+
+source install/setup.bash

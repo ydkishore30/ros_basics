@@ -1,47 +1,47 @@
 # ------------------------------
 # Gazebo → ROS2 Clock
 # ------------------------------
-- ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
-  ros_type_name: "rosgraph_msgs/msg/Clock"
-  gz_type_name: "gz.msgs.Clock"
+- ros_topic_name: '/clock'
+  gz_topic_name: '/clock'
+  ros_type_name: 'rosgraph_msgs/msg/Clock'
+  gz_type_name: 'gz.msgs.Clock'
   direction: GZ_TO_ROS
 
 
 # ------------------------------
 # LiDAR (only if robot has lidar)
 # ------------------------------
-- ros_topic_name: "/scan_sim"
-  gz_topic_name: "/world/industrial-warehouse/model/my_robot/link/base_footprint/sensor/lidar/scan"
-  ros_type_name: "sensor_msgs/msg/LaserScan"
-  gz_type_name: "gz.msgs.LaserScan"
+- ros_topic_name: '/scan_sim'
+  gz_topic_name: '/world/industrial-warehouse/model/my_robot/link/base_footprint/sensor/lidar/scan'
+  ros_type_name: 'sensor_msgs/msg/LaserScan'
+  gz_type_name: 'gz.msgs.LaserScan'
   direction: GZ_TO_ROS
 
 
 # ------------------------------
 # Camera Image (only if camera exists)
 # ------------------------------
-- ros_topic_name: "/camera/image_raw"
-  gz_topic_name: "/camera"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
+- ros_topic_name: '/camera/image_raw'
+  gz_topic_name: '/camera'
+  ros_type_name: 'sensor_msgs/msg/Image'
+  gz_type_name: 'gz.msgs.Image'
   direction: GZ_TO_ROS
 
 
 # ------------------------------
 # Camera Info
 # ------------------------------
-- ros_topic_name: "/camera/camera_info"
-  gz_topic_name: "/camera_info"
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
+- ros_topic_name: '/camera/camera_info'
+  gz_topic_name: '/camera_info'
+  ros_type_name: 'sensor_msgs/msg/CameraInfo'
+  gz_type_name: 'gz.msgs.CameraInfo'
   direction: GZ_TO_ROS
 
 # ------------------------------
 # IMU
 # ------------------------------
-- ros_topic_name: "/imu"
-  gz_topic_name: "/imu"
-  ros_type_name: "sensor_msgs/msg/Imu"
-  gz_type_name: "gz.msgs.IMU"
+- ros_topic_name: '/imu'
+  gz_topic_name: '/imu'
+  ros_type_name: 'sensor_msgs/msg/Imu'
+  gz_type_name: 'gz.msgs.IMU'
   direction: GZ_TO_ROS

@@ -69,11 +69,11 @@ RUN mkdir -p /simulation_assets/worlds \
 WORKDIR /ros2_ws
 COPY src /ros2_ws/src
 
-RUN /bin/bash -c "source /opt/ros/jazzy/setup.bash && \
-    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy"
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy'
 
-RUN /bin/bash -c "source /opt/ros/jazzy/setup.bash && \
-    colcon build --symlink-install"
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install'
 
 # ============================================================
 # Gazebo paths
@@ -86,7 +86,7 @@ ENV TURTLEBOT3_MODEL=burger
 # ============================================================
 # ROS sourcing
 # ============================================================
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
+RUN echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc
+RUN echo 'source /ros2_ws/install/setup.bash' >> ~/.bashrc
 
 CMD ["/bin/bash"]

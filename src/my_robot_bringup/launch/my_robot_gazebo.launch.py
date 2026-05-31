@@ -1,3 +1,5 @@
+"""Launch file for robot simulation and controller startup."""
+
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -6,43 +8,54 @@ from launch.actions import (
     TimerAction
 )
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    Command
+)
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit, OnProcessStart
 
 
 def generate_launch_description():
-
-    description_pkg = FindPackageShare("my_robot_description")
+    """Generate launch description for robot bringup."""
+    description_pkg = FindPackageShare('my_robot_description')
 
     xacro_file = PathJoinSubstitution([
         description_pkg,
-        "urdf",
-        "my_robot.urdf.xacro",
+        'urdf',
+        'my_robot.urdf.xacro',
     ])
 
-    robot_description = Command(["xacro ", xacro_file])
+    world_file = PathJoinSubstitution([
+        FindPackageShare('my_robot_description'),
+        'worlds',
+        'industrial-warehouse',
+        'industrial-warehouse.sdf'
+    ])
+
+    robot_description = Command(['xacro ', xacro_file])
 
     robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        output="screen",
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
         parameters=[{
-            "use_sim_time": True,
-            "robot_description": robot_description
+            'use_sim_time': True,
+            'robot_description': robot_description
         }]
     )
 
     gazebo = ExecuteProcess(
         cmd=[
-            "gz",
-            "sim",
-            "-v", "4",
-            "-r",
-            "/ros2_ws/src/my_robot_description/worlds/industrial-warehouse/industrial-warehouse.sdf"
+            'gz',
+            'sim',
+            '-v', '4',
+            '-r',
+            world_file
         ],
-        output="screen"
+        output='screen'
     )
 
     gz_spawn_entity = Node(
@@ -105,6 +118,27 @@ def generate_launch_description():
         output='screen'
     )
 
+    # =========================================================================
+    # EKF Localization Integration
+    # =========================================================================
+    ekf_config = PathJoinSubstitution([
+        FindPackageShare('my_robot_description'),
+        'config',
+        'ekf.yaml',
+    ])
+
+    ekf_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[
+            ekf_config,
+            {'use_sim_time': True} # Keeps EKF synced with Gazebo time clock
+        ]
+    )
+    # =========================================================================
+
     # Delay robot spawn by 5 seconds
     delayed_spawn = TimerAction(
         period=5.0,
@@ -142,30 +176,30 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
 
     rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        output="screen",
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
         condition=IfCondition(use_rviz),
-        arguments=["-d", PathJoinSubstitution([
+        arguments=['-d', PathJoinSubstitution([
             description_pkg,
-            "rviz",
-            "my_robot.rviz"
+            'rviz',
+            'my_robot.rviz'
         ])]
     )
 
     joy_node = Node(
-        package="joy",
-        executable="joy_node",
-        name="joy_node",
-        output="screen"
+        package='joy',
+        executable='joy_node',
+        name='joy_node',
+        output='screen'
     )
 
     teleop_node = Node(
-        package="teleop_twist_joy",
-        executable="teleop_node",
-        name="teleop_twist_joy",
-        output="screen",
+        package='teleop_twist_joy',
+        executable='teleop_node',
+        name='teleop_twist_joy',
+        output='screen',
         parameters=[PathJoinSubstitution([
             FindPackageShare('my_robot_bringup'),
             'config',
@@ -174,10 +208,10 @@ def generate_launch_description():
     )
 
     twist_converter_node = Node(
-        package="my_robot_bringup",
-        executable="twist_converter.py",
-        name="twist_converter",
-        output="screen"
+        package='my_robot_bringup',
+        executable='twist_converter.py',
+        name='twist_converter',
+        output='screen'
     )
 
     return LaunchDescription([
@@ -195,6 +229,9 @@ def generate_launch_description():
         controller_manager_after_spawn,
         joint_state_after_controller,
         diff_drive_after_joint,
+
+        # Added EKF node execution here
+        ekf_node,
 
         rviz_node,
         joy_node,

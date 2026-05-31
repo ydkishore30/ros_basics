@@ -15,7 +15,7 @@ find_package(controller_manager REQUIRED)
 find_package(gz_ros2_control REQUIRED)
 
 install(
-  DIRECTORY urdf launch rviz config
+  DIRECTORY urdf launch rviz config worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
