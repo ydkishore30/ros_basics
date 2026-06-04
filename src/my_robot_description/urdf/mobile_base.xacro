@@ -2,15 +2,21 @@
 <robot name='my_robot' xmlns:xacro='http://www.ros.org/wiki/xacro'>
 
     <!-- Xacro properties -->
-    <xacro:property name='wheel_radius' value='0.1' />
-    <xacro:property name='wheel_length' value='0.05' />
-    <xacro:property name='base_length' value='0.6' />
-    <xacro:property name='base_width' value='0.4' />
-    <xacro:property name='base_height' value='0.2' />
+    <xacro:property name='wheel_radius' value='0.04' />
+    <xacro:property name='wheel_length' value='0.04' />
+    <xacro:property name='base_length' value='0.3' />
+    <xacro:property name='base_width' value='0.3' />
+    <xacro:property name='base_height' value='0.12' />
     <xacro:property name='wheel_x_offset' value='${base_length/4}' />
     <xacro:property name='wheel_y_offset' value='${base_width/2 + 0.025}' />
-    <xacro:property name='wheel_separation' value='${wheel_y_offset * 2}' />
+    <xacro:property name='wheel_separation' value='.34' />
+    <xacro:property name='castor_radius' value='0.05' />
+    <xacro:property name='castor_length' value='0.1' />
+    <xacro:property name='castor_wheel_radius' value='0.04' />
+    <xacro:property name='castor_wheel_length' value='0.02' />
     <xacro:property name='castor_x_offset' value='${base_length/3}' />
+    <xacro:property name='castor_y_offset' value='0' />
+    <xacro:property name='castor_z_offset' value='0' />
 
 
     <xacro:macro name='wheel_visual' params='name'>
@@ -61,17 +67,17 @@
     <link name='castor_wheel_link'>
         <visual>
             <geometry>
-                <sphere radius='0.05' />
+                <sphere radius='${castor_wheel_radius}' />
             </geometry>
-            <origin xyz='0 0 -0.05' rpy='0 0 0' />
+            <origin xyz='0 0 0' rpy='0 0 0' />
             <material name='grey'/>
         </visual>
-        <xacro:sphere_inertia m='0.5' r='0.05' o_xyz='0 0 -0.05' o_rpy='0 0 0'/>
+        <xacro:sphere_inertia m='0.5' r='${castor_wheel_radius}' o_xyz='0 0 -${castor_wheel_radius}' o_rpy='0 0 0'/>
         <collision>
             <geometry>
-                <sphere radius='0.05' />
+                <sphere radius='${castor_wheel_radius}' />
             </geometry>
-            <origin xyz='0 0 -0.05' rpy='0 0 0' />
+            <origin xyz='0 0 0' rpy='0 0 0' />
         </collision>
     </link>
 
@@ -95,12 +101,13 @@
     <joint name='base_to_castor_wheel' type='fixed'>
         <parent link='base_link'/>
         <child link='castor_wheel_link'/>
-        <origin xyz='${castor_x_offset} 0 0' rpy='0 0 0'/>
+        <origin xyz='${castor_x_offset} ${castor_y_offset} ${castor_z_offset}' rpy='0 0 0'/>
     </joint>
+    
     <joint name='base_joint' type='fixed'>
         <parent link='base_footprint'/>
         <child link='base_link'/>
-        <origin xyz='0 0 .1' rpy='0 0 0'/>
+        <origin xyz='0 0 ${castor_wheel_radius}' rpy='0 0 0'/>
         <axis xyz='0 0 1'/>
     </joint>
 </robot>   

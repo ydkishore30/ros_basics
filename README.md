@@ -124,3 +124,34 @@ echo 'export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/jazzy/lib:$GZ_SIM_SYSTEM_PLUGIN_
 ./src/my_robot_bringup/launch/build_source_launch.sh
 
 source install/setup.bash
+
+ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
+
+/opt/ros/jazzy/share/slam_toolbox/config/
+
+docker exec -it ros_basics-ros-1 bash
+
+export ROS_DOMAIN_ID=0
+ros2 daemon stop
+ros2 daemon start
+
+
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.5}}"
+
+
+ls /dev/input/js0
+
+ros2 launch nav2_bringup navigation_launch.py \
+  use_sim_time:=True \
+  map:=./src/my_robot_description/maps/my_first_map.yaml \
+  params_file:=/ros2_ws/src/my_robot_description/nav2_params.yaml
+
+ros2 launch slam_toolbox online_async_launch.py slam_params_file:=/ros2_ws/src/my_robot_description/nav2_params.yaml use_sim_time:=True
+
+
+
+ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 0 --frame-id map --child-frame-id odom
+
+./src/my_robot_description/maps/my_first_map.yaml
+
+/opt/ros/jazzy/share/slam_toolbox/config/mapper_params_online_async.yaml

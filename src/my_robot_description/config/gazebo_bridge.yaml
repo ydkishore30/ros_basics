@@ -11,7 +11,7 @@
 # ------------------------------
 # LiDAR (only if robot has lidar)
 # ------------------------------
-- ros_topic_name: '/scan_sim'
+- ros_topic_name: '/scan'
   gz_topic_name: '/world/industrial-warehouse/model/my_robot/link/base_footprint/sensor/lidar/scan'
   ros_type_name: 'sensor_msgs/msg/LaserScan'
   gz_type_name: 'gz.msgs.LaserScan'

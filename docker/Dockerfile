@@ -89,4 +89,37 @@ ENV TURTLEBOT3_MODEL=burger
 RUN echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc
 RUN echo 'source /ros2_ws/install/setup.bash' >> ~/.bashrc
 
+# ============================================================
+# Basic tools & Clean Libraries
+# ============================================================
+RUN apt update && apt install -y \
+    python3-pip \
+    python3-opencv \
+    ros-jazzy-cv-bridge \
+    ros-jazzy-vision-msgs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# JOYSTICK + INPUT DEVICE SUPPORT (IMPORTANT FIX)
+# ============================================================
+RUN apt update && apt install -y \
+    joystick \
+    evtest \
+    input-utils \
+    ros-jazzy-joy \
+    && rm -rf /var/lib/apt/lists/*
+
+
+RUN apt update && apt install -y \
+    ros-jazzy-nav2-map-server \
+    ros-jazzy-nav2-amcl \
+    ros-jazzy-nav2-lifecycle-manager \
+    && rm -rf /var/lib/apt/lists/*
+    
+# ============================================================
+# YOLO Dependencies with PEP 668 Override Flag
+# ============================================================
+# Ubuntu 24.04 core image restriction ni bypass cheyadanki --break-system-packages vadali
+# RUN pip3 install --break-system-packages ultralytics
+
 CMD ["/bin/bash"]

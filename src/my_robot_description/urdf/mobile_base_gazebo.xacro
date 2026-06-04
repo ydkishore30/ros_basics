@@ -11,6 +11,7 @@
     </multi_friction>
   </gazebo> -->
 
+<!-- Gazebo diff-drive plugin removed to avoid duplicate control with ROS2 diff_drive_controller.
 <gazebo>
   <plugin
     filename="gz-sim-diff-drive-system"
@@ -21,8 +22,8 @@
     <right_joint>base_to_right_wheel</right_joint>
 
     <!-- Robot geometry -->
-    <wheel_separation>0.45</wheel_separation>
-    <wheel_radius>0.1</wheel_radius>
+    <wheel_separation>0.35</wheel_separation>
+    <wheel_radius>0.04</wheel_radius>
 
     <!-- Topics -->
     <topic>cmd_vel</topic>
@@ -37,7 +38,7 @@
 
   </plugin>
 </gazebo>
-
+-->
 
   <!-- Gazebo materials -->
 

@@ -9,7 +9,7 @@ services:
     network_mode: host
 
     # ============================================================
-    # GPU SUPPORT (IMPORTANT FIX)
+    # GPU SUPPORT (Gazebo / RViz)
     # ============================================================
     deploy:
       resources:
@@ -22,7 +22,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
 
-      # GUI
+      # GUI (RViz / Gazebo)
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - QT_QPA_PLATFORM=xcb
@@ -31,11 +31,24 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
-      # - /home/dinesh/ros_basics/src/my_robot_description/gz_assets:/gz_assets
+      - /dev/bus/usb:/dev/bus/usb:rw
+      
+      # DYNAMIC HARDWARE FIX: Bind-mount the entire inputs folder
+      - /dev/input:/dev/input:rw
+      
+      # Your ROS workspace
       - /home/dinesh/ros_basics:/ros2_ws
+
+      # SLAM toolbox config
       - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
+
+    # ============================================================
+    # DEVICE ACCESS (IMPORTANT FIX)
+    # ============================================================
     devices:
       - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+      - /dev/bus/usb:/dev/bus/usb
 
     privileged: true
 
