@@ -25,13 +25,13 @@
             <size>10.0 0.2 3.8</size>
           </box>
         </geometry>
-        <!-- <material>
+        <material>
           <script>
             <uri>model://cutout_wall/materials/scripts</uri>
             <uri>model://cutout_wall/materials/textures</uri>
             <name>drc_practice/cutout_wall</name>
           </script>
-        </material> -->
+        </material>
       </visual>
       <sensor name="mud_contact" type="contact">
         <always_on>true</always_on>
