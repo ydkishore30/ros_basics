@@ -1,4 +1,4 @@
-FROM jazzy-ros-base
+FROM ros:jazzy-ros-base
 
 # ============================================================
 # Core minimal dependencies (Pi friendly)
