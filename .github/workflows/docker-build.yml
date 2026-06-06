@@ -8,6 +8,11 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+        # ADD THESE TWO LINES HERE 👇
+    permissions:
+      contents: read
+      packages: write
+      
     steps:
       # 1. Download your ROS2 source packages into the cloud runner
       - name: Checkout Code
