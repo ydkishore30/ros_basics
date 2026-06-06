@@ -10,6 +10,18 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', [
+            'launch/nav2.launch.py',
+            'launch/localization.launch.py',
+        ]),
+        ('share/' + package_name + '/config', [
+            'config/nav2_params.yaml',
+            'config/amcl_params.yaml',
+        ]),
+        ('share/' + package_name + '/maps', [
+            'maps/my_map.yaml',
+            'maps/my_map_gimp.pgm',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

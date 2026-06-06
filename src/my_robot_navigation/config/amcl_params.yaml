@@ -1,0 +1,52 @@
+/**:
+  ros__parameters:
+    # Node-specific parameters
+    use_sim_time: true
+
+# AMCL parameters
+amcl:
+  ros__parameters:
+    use_sim_time: true
+    transform_tolerance: 2.0  # దీన్ని 0.1 ወይም 0.2 నుండి 1.0 లేదా 2.0 సెకన్లకి పెంచండి
+    # Particle filter parameters
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    alpha5: 0.2
+    
+    # Base frame and odometry frame
+    base_frame_id: "base_footprint"
+    global_frame_id: "map"
+    odom_frame_id: "odom"
+    
+    # Sensor parameters - laser scan
+    laser_min_range: 0.12
+    laser_max_range: 3.5
+    laser_max_beams: 180
+    laser_model_type: "likelihood_field"
+    
+    # Motion model
+    odom_model_type: "diff"
+    odom_alpha1: 0.1
+    odom_alpha2: 0.1
+    odom_alpha3: 0.1
+    odom_alpha4: 0.1
+    
+    # Filter parameters
+    min_particles: 500
+    max_particles: 2000
+    pf_err: 0.05
+    pf_z: 0.99
+    
+    # Update parameters
+    update_min_d: 0.25
+    update_min_a: 0.2
+    
+    # Resample parameters
+    resample_interval: 1
+    
+    # Transform tolerance
+    transform_tolerance: 1.0
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0

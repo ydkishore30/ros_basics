@@ -155,3 +155,17 @@ ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 0 --frame-id map --c
 ./src/my_robot_description/maps/my_first_map.yaml
 
 /opt/ros/jazzy/share/slam_toolbox/config/mapper_params_online_async.yaml
+
+
+export GZ_SIM_RESOURCE_PATH=/home/dinesh/ros_basics/src/my_robot_description/worlds/sample_blender
+
+gz sim /home/dinesh/ros_basics/src/my_robot_description/worlds/sample_blender/model.sdf
+
+
+ros2 launch nav2_bringup bringup_launch.py map:=./src/my_robot_description/maps/my_map.yaml  use_sim_time:=True
+
+ros2 launch my_robot_navigation nav2.launch.py 
+
+ros2 launch nav2_bringup localization_launch.py map:=/src/my_robot_description/maps/my_map.yaml  use_sim_time:=True
+
+ros2 run teleop_twist_keyboard teleop_twist_keyboard

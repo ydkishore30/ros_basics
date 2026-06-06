@@ -1,0 +1,82 @@
+FROM ros-jazzy-base
+
+# ============================================================
+# Core minimal dependencies (Pi friendly)
+# ============================================================
+RUN apt update && apt install -y \
+    git \
+    python3-pip \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    nano vim \
+    wget curl \
+    libusb-1.0-0-dev \
+    libserial-dev \
+    libglib2.0-dev \
+    libxerces-c-dev libtinyxml2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ROS2 Navigation stack (ONLY runtime essentials)
+# ============================================================
+RUN apt update && apt install -y \
+    ros-jazzy-navigation2 \
+    ros-jazzy-nav2-bringup \
+    ros-jazzy-nav2-amcl \
+    ros-jazzy-nav2-map-server \
+    ros-jazzy-nav2-lifecycle-manager \
+    ros-jazzy-slam-toolbox \
+    ros-jazzy-ros2-control \
+    ros-jazzy-ros2-controllers \
+    ros-jazzy-controller-manager \
+    ros-jazzy-joint-state-broadcaster \
+    ros-jazzy-diff-drive-controller \
+    ros-jazzy-xacro \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Hardware interface (lidar + joystick)
+# ============================================================
+RUN apt update && apt install -y \
+    ros-jazzy-joy \
+    joystick \
+    evtest \
+    input-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# YDLidar SDK (keep only if using lidar)
+# ============================================================
+RUN git clone https://github.com/YDLIDAR/YDLidar-SDK.git /opt/YDLidar-SDK && \
+    cd /opt/YDLidar-SDK && mkdir build && cd build && \
+    cmake .. && make -j$(nproc) && make install && ldconfig
+
+ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
+
+# ============================================================
+# rosdep
+# ============================================================
+RUN rosdep init || true && rosdep update
+
+# ============================================================
+# Workspace (build optionally, but lighter)
+# ============================================================
+WORKDIR /ros2_ws
+COPY src /ros2_ws/src
+
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy || true'
+
+# ⚠️ OPTIONAL: build on host instead of Pi (recommended)
+# RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && colcon build --symlink-install'
+
+# ============================================================
+# Environment
+# ============================================================
+ENV TURTLEBOT3_MODEL=burger
+
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
+
+CMD ["/bin/bash"]

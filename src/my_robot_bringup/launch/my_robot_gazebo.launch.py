@@ -170,7 +170,11 @@ def generate_launch_description():
         executable='joy_node',
         name='joy_node',
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}]
+        parameters=[{'use_sim_time': use_sim_time,
+                     
+        'device_id': 0,
+        'device_name': '/dev/input/js0',
+        'deadzone': 0.05}]
     )
 
     teleop_node = Node(

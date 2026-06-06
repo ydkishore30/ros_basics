@@ -28,6 +28,10 @@ services:
       - QT_QPA_PLATFORM=xcb
       - XAUTHORITY=/root/.Xauthority
 
+      # Gazebo model/resource path for local models in the mounted workspace
+      - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
+      - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
+
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
