@@ -51,12 +51,14 @@ services:
   ros-pi:
     profiles: ["pi"]
     image: ghcr.io/ydkishore30/ros_basics:pi
+    restart: unless-stopped
+
     network_mode: host
     
     # Notice: The deploy block is entirely removed here to prevent Pi crashes
         # 🟢 ADD THIS LINE HERE: Forces Docker to expect the emulated architecture
     platform: linux/arm64
-    
+
     environment:
       - DISPLAY=${DISPLAY:-:0}
       - QT_X11_NO_MITSHM=1
