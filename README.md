@@ -169,3 +169,6 @@ ros2 launch my_robot_navigation nav2.launch.py
 ros2 launch nav2_bringup localization_launch.py map:=/src/my_robot_description/maps/my_map.yaml  use_sim_time:=True
 
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+
+sudo docker run -d --name ros_basic_container --restart unless-stopped --net-host ghcr.io/ydkishore30/ros_basics:pi
