@@ -108,23 +108,23 @@ def generate_launch_description():
         )
     )
 
-    # ------------------------------
-    # RViz
-    # ------------------------------
-    use_rviz = LaunchConfiguration('use_rviz')
+    # # ------------------------------
+    # # RViz
+    # # ------------------------------
+    # use_rviz = LaunchConfiguration('use_rviz')
 
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        output='screen',
-        condition=IfCondition(use_rviz),
-        arguments=['-d', PathJoinSubstitution([
-            description_pkg,
-            'rviz',
-            'my_robot.rviz'
-        ])]
-    )
+    # rviz_node = Node(
+    #     package='rviz2',
+    #     executable='rviz2',
+    #     name='rviz2',
+    #     output='screen',
+    #     condition=IfCondition(use_rviz),
+    #     arguments=['-d', PathJoinSubstitution([
+    #         description_pkg,
+    #         'rviz',
+    #         'my_robot.rviz'
+    #     ])]
+    # )
 
     # ------------------------------
     # Teleop (Gamepad Joystick Control)
@@ -179,18 +179,18 @@ def generate_launch_description():
     # Launch description
     # ------------------------------
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'use_rviz',
-            default_value='true',
-            description='Whether to launch RViz2',
-        ),
+        # DeclareLaunchArgument(
+        #     'use_rviz',
+        #     default_value='true',
+        #     description='Whether to launch RViz2',
+        # ),
         robot_state_publisher,
         controller_manager,
         joint_state_after_controller,
         diff_drive_after_joint,
         ekf_node,   # ✅ ADD THIS
 
-        rviz_node,
+        # rviz_node,
         # Joystick control with twist converter
         joy_node,
         teleop_node,

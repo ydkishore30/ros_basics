@@ -115,6 +115,9 @@ For more help, see the ROS 2 and Gazebo documentation or contact the project mai
 
 ./src/my_robot_bringup/launch/build_source_launch.sh
 
+./src/my_robot_bringup/launch/build_real_source_launch.sh
+
+
 ---
 Add following for ros2 control librarry 
 
@@ -172,3 +175,5 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 
 sudo docker run -d --name ros_basic_container --restart unless-stopped --net-host ghcr.io/ydkishore30/ros_basics:pi
+
+./src/my_robot_bringup/launch/build_real_source_launch.sh

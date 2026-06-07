@@ -1,61 +1,63 @@
-name: Build Open Source ROS2 Images
+name: Build and Push ROS 2 Multi-Arch Images
 
-# Trigger the automation every time you push code to the 'main' branch
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main  # Change to master if your default branch is master
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-        # ADD THESE TWO LINES HERE 👇
     permissions:
       contents: read
-      packages: write
-      
+      packages: write  # Grants permission to upload to ghcr.io
+
     steps:
-      # 1. Download your ROS2 source packages into the cloud runner
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up hardware emulation so the cloud can compile ARM64 for the Pi
-      - name: Set up QEMU
+      - name: Set up QEMU (ARM Emulation)
         uses: docker/setup-qemu-action@v3
+        # Lets the GitHub server build ARM64 images for the Raspberry Pi
 
-      # 3. Initialize the advanced Docker building system
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx (BuildKit Engine)
         uses: docker/setup-buildx-action@v3
 
-      # 4. Log in to GitHub Container Registry using built-in automated system tokens
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }} # Auto-injected by GitHub
 
-      # 5. Extract lowercase repository metadata names to prevent Docker naming errors
-      - name: Extract metadata for Docker
-        id: meta
-        run: |
-          echo "repo=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
-
-      # 6. Build the lightweight Raspberry Pi Image (ARM64) and push to registry
-      - name: Build and Push Pi Image
+      # ============================================================
+      # 1. BUILD & PUSH LOCAL PC IMAGE (linux/amd64)
+      # ============================================================
+      - name: Build and push PC image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.pi
-          platforms: linux/arm64
-          push: true
-          tags: ghcr.io/${{ steps.meta.outputs.repo }}:pi
-
-      # 7. Build the Laptop/Simulation Image (AMD64) and push to registry
-      - name: Build and Push Laptop Image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.laptop
+          file: docker/Dockerfile
           platforms: linux/amd64
+          build-args: |
+            TARGETARCH=amd64
           push: true
-          tags: ghcr.io/${{ steps.meta.outputs.repo }}:laptop
+          tags: ghcr.io/${{ github.repository_owner }}/ros_basics:pc
+          cache-from: type=gha # Speeds up subsequent builds using GitHub cache
+          cache-to: type=gha,mode=max
+
+      # ============================================================
+      # 2. BUILD & PUSH RASPBERRY PI IMAGE (linux/arm64)
+      # ============================================================
+      - name: Build and push Pi image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/arm64
+          build-args: |
+            TARGETARCH=arm64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/ros_basics:pi
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

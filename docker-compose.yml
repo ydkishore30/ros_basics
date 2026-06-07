@@ -1,13 +1,15 @@
 version: '3.8'
 
 services:
-  ros:
-    # Dynamically picks the correct image (PC vs Pi) based on your .env file
-    image: ${IMAGE_TAG}
-    
+  # ============================================================
+  # 💻 PROFILE 1: FOR YOUR LOCAL DEVELOPER PC (NVIDIA ACTIVE)
+  # ============================================================
+  ros-pc:
+    profiles: ["pc"]
+    image: ghcr.io/ydkishore30/ros_basics:pc
     network_mode: host
-
-    # GPU Reservation block (PC safely uses this; Pi ignores it if runtime is not nvidia)
+    
+    # Enforces strict NVIDIA scheduling (PC ONLY)
     deploy:
       resources:
         reservations:
@@ -15,35 +17,62 @@ services:
             - capabilities: [gpu]
 
     environment:
-      # Handled by .env (all for PC, none for Pi)
-      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
-      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
-
-      # GUI configurations
-      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - DISPLAY=${DISPLAY:-:0}
       - QT_X11_NO_MITSHM=1
       - QT_QPA_PLATFORM=xcb
       - XAUTHORITY=/root/.Xauthority
-
-      # Gazebo workspace paths
       - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
       - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
 
-    volumes:
+    # Anchor shared volumes so we don't have to duplicate lines for the Pi
+    volumes: &shared-volumes
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
       - /dev/bus/usb:/dev/bus/usb:rw
       - /dev/input:/dev/input:rw
-      
-      # Dynamically maps the correct user folder path from .env
-      - ${WORKSPACE_PATH}:/ros2_ws
       - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
+      # Mounts your workspace folder dynamically based on your local .env file
+      - ${WORKSPACE_PATH}:/ros2_ws
 
     devices:
-      - /dev/dri:/dev/dri            # 3D Graphics for both PC and Pi
-      - /dev/vchiq:/dev/vchiq        # Pi VideoCore (falls back safely on PC)
-      - /dev/input:/dev/input        # Joysticks / Keyboards
-      - /dev/bus/usb:/dev/bus/usb    # Lidars / Cameras
+      - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+      - /dev/bus/usb:/dev/bus/usb
+
+    privileged: true
+    tty: true
+    stdin_open: true
+
+  # ============================================================
+  # 🍓 PROFILE 2: FOR YOUR RASPBERRY PI (NVIDIA BLOCKS REMOVED)
+  # ============================================================
+  ros-pi:
+    profiles: ["pi"]
+    image: ghcr.io/ydkishore30/ros_basics:pi
+    network_mode: host
+    
+    # Notice: The deploy block is entirely removed here to prevent Pi crashes
+        # 🟢 ADD THIS LINE HERE: Forces Docker to expect the emulated architecture
+    platform: linux/arm64
+    
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - QT_QPA_PLATFORM=xcb
+      - XAUTHORITY=/root/.Xauthority
+      - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
+      - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
+
+    volumes: *shared-volumes  # Automatically mirrors the exact volumes used above
+
+    devices:
+      - /dev/dri:/dev/dri          # Direct hardware acceleration for VideoCore GPU
+      - /dev/vchiq:/dev/vchiq      # Pi low-level multimedia channel
+      - /dev/input:/dev/input      # Keyboards / Controllers / Joysticks
+      - /dev/bus/usb:/dev/bus/usb  # USB Devices
+      - /dev:/dev:rw               # Dynamic USB Serial Hotplug monitor (ttyUSB0 / ttyACM0)
 
     privileged: true
     tty: true

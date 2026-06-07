@@ -12,7 +12,7 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 find_package(controller_manager REQUIRED)
-find_package(gz_ros2_control REQUIRED)
+# find_package(gz_ros2_control REQUIRED)
 
 install(
   DIRECTORY urdf launch rviz config worlds
