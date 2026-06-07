@@ -1,29 +1,7 @@
 FROM ros:jazzy-ros-base
 
-# Workspace
 # ============================================================
-WORKDIR /ros2_ws
-COPY src /ros2_ws/src
-
-RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
-    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy'
-
-# ============================================================
-# Build workspace
-# ============================================================
-RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
-    colcon build --symlink-install'
-
-# ============================================================
-# Environment
-# ============================================================
-ENV TURTLEBOT3_MODEL=burger
-
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
-
-# ============================================================
-# Core minimal dependencies (Pi friendly)
+# Core dependencies
 # ============================================================
 RUN apt update && apt install -y \
     git \
@@ -36,11 +14,12 @@ RUN apt update && apt install -y \
     libusb-1.0-0-dev \
     libserial-dev \
     libglib2.0-dev \
-    libxerces-c-dev libtinyxml2-dev \
+    libxerces-c-dev \
+    libtinyxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# ROS2 Navigation stack (ONLY runtime essentials)
+# Navigation stack
 # ============================================================
 RUN apt update && apt install -y \
     ros-jazzy-navigation2 \
@@ -58,7 +37,7 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# Hardware interface (lidar + joystick)
+# Hardware support
 # ============================================================
 RUN apt update && apt install -y \
     ros-jazzy-joy \
@@ -68,37 +47,54 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# YDLidar SDK (keep only if using lidar)
+# YDLidar SDK
 # ============================================================
 RUN git clone https://github.com/YDLIDAR/YDLidar-SDK.git /opt/YDLidar-SDK && \
-    cd /opt/YDLidar-SDK && mkdir build && cd build && \
-    cmake .. && make -j$(nproc) && make install && ldconfig
+    cd /opt/YDLidar-SDK && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
 
 ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
 
 # ============================================================
 # rosdep
 # ============================================================
-RUN rosdep init || true && rosdep update
+RUN rosdep init || true
+RUN rosdep update
 
 # ============================================================
-# Workspace (build optionally, but lighter)
+# Workspace
 # ============================================================
 WORKDIR /ros2_ws
+
 COPY src /ros2_ws/src
 
 RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
-    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy || true'
+    rosdep install --from-paths src \
+    --ignore-src \
+    -r \
+    -y \
+    --rosdistro jazzy || true'
 
-# ⚠️ OPTIONAL: build on host instead of Pi (recommended)
-# RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && colcon build --symlink-install'
+# ============================================================
+# Build workspace
+# ============================================================
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    colcon build \
+    --symlink-install \
+    --executor sequential \
+    --parallel-workers 1'
 
 # ============================================================
 # Environment
 # ============================================================
 ENV TURTLEBOT3_MODEL=burger
 
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc
+RUN echo "source /ros2_ws/install/setup.bash" >> /root/.bashrc
 
 CMD ["/bin/bash"]
