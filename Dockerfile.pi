@@ -1,5 +1,27 @@
 FROM ros:jazzy-ros-base
 
+# Workspace
+# ============================================================
+WORKDIR /ros2_ws
+COPY src /ros2_ws/src
+
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy'
+
+# ============================================================
+# Build workspace
+# ============================================================
+RUN /bin/bash -c 'source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install'
+
+# ============================================================
+# Environment
+# ============================================================
+ENV TURTLEBOT3_MODEL=burger
+
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
+
 # ============================================================
 # Core minimal dependencies (Pi friendly)
 # ============================================================
