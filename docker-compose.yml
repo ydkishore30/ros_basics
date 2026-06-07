@@ -2,15 +2,12 @@ version: '3.8'
 
 services:
   ros:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-
+    # Dynamically picks the correct image (PC vs Pi) based on your .env file
+    image: ${IMAGE_TAG}
+    
     network_mode: host
 
-    # ============================================================
-    # GPU SUPPORT (Gazebo / RViz)
-    # ============================================================
+    # GPU Reservation block (PC safely uses this; Pi ignores it if runtime is not nvidia)
     deploy:
       resources:
         reservations:
@@ -18,17 +15,17 @@ services:
             - capabilities: [gpu]
 
     environment:
-      # NVIDIA GPU
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
+      # Handled by .env (all for PC, none for Pi)
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
+      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 
-      # GUI (RViz / Gazebo)
+      # GUI configurations
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - QT_QPA_PLATFORM=xcb
       - XAUTHORITY=/root/.Xauthority
 
-      # Gazebo model/resource path for local models in the mounted workspace
+      # Gazebo workspace paths
       - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
       - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
 
@@ -36,25 +33,18 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
       - /dev/bus/usb:/dev/bus/usb:rw
-      
-      # DYNAMIC HARDWARE FIX: Bind-mount the entire inputs folder
       - /dev/input:/dev/input:rw
       
-      # Your ROS workspace
-      - /home/dinesh/ros_basics:/ros2_ws
-
-      # SLAM toolbox config
+      # Dynamically maps the correct user folder path from .env
+      - ${WORKSPACE_PATH}:/ros2_ws
       - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
 
-    # ============================================================
-    # DEVICE ACCESS (IMPORTANT FIX)
-    # ============================================================
     devices:
-      - /dev/dri:/dev/dri
-      - /dev/input:/dev/input
-      - /dev/bus/usb:/dev/bus/usb
+      - /dev/dri:/dev/dri            # 3D Graphics for both PC and Pi
+      - /dev/vchiq:/dev/vchiq        # Pi VideoCore (falls back safely on PC)
+      - /dev/input:/dev/input        # Joysticks / Keyboards
+      - /dev/bus/usb:/dev/bus/usb    # Lidars / Cameras
 
     privileged: true
-
     tty: true
     stdin_open: true
