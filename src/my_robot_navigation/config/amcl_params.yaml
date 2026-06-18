@@ -7,7 +7,6 @@
 amcl:
   ros__parameters:
     use_sim_time: true
-    transform_tolerance: 2.0  # దీన్ని 0.1 ወይም 0.2 నుండి 1.0 లేదా 2.0 సెకన్లకి పెంచండి
     # Particle filter parameters
     alpha1: 0.2
     alpha2: 0.2
@@ -47,6 +46,6 @@ amcl:
     resample_interval: 1
     
     # Transform tolerance
-    transform_tolerance: 1.0
+    transform_tolerance: 2.0
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0

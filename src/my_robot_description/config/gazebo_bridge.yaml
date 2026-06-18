@@ -7,9 +7,8 @@
   gz_type_name: 'gz.msgs.Clock'
   direction: GZ_TO_ROS
 
-
 # ------------------------------
-# LiDAR (only if robot has lidar)
+# LiDAR
 # ------------------------------
 - ros_topic_name: '/scan'
   gz_topic_name: '/world/industrial-warehouse/model/my_robot/link/base_footprint/sensor/lidar/scan'
@@ -17,16 +16,14 @@
   gz_type_name: 'gz.msgs.LaserScan'
   direction: GZ_TO_ROS
 
-
 # ------------------------------
-# Camera Image (only if camera exists)
+# Camera Image
 # ------------------------------
 - ros_topic_name: '/camera/image_raw'
   gz_topic_name: '/camera'
   ros_type_name: 'sensor_msgs/msg/Image'
   gz_type_name: 'gz.msgs.Image'
   direction: GZ_TO_ROS
-
 
 # ------------------------------
 # Camera Info
@@ -44,4 +41,25 @@
   gz_topic_name: '/imu'
   ros_type_name: 'sensor_msgs/msg/Imu'
   gz_type_name: 'gz.msgs.IMU'
+  direction: GZ_TO_ROS
+
+# ------------------------------
+# Control Topics
+# ------------------------------
+- ros_topic_name: '/cmd_vel'
+  gz_topic_name: '/cmd_vel'
+  ros_type_name: 'geometry_msgs/msg/Twist'
+  gz_type_name: 'gz.msgs.Twist'
+  direction: ROS_TO_GZ
+
+- ros_topic_name: '/odom'
+  gz_topic_name: '/odom'
+  ros_type_name: 'nav_msgs/msg/Odometry'
+  gz_type_name: 'gz.msgs.Odometry'
+  direction: GZ_TO_ROS
+
+- ros_topic_name: '/tf'
+  gz_topic_name: '/tf'
+  ros_type_name: 'tf2_msgs/msg/TFMessage'
+  gz_type_name: 'gz.msgs.Pose_V'
   direction: GZ_TO_ROS

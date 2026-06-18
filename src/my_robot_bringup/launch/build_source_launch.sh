@@ -2,6 +2,8 @@
 set -e
 clear
 
+rm -rf build install log
+
 # Build
 colcon build --symlink-install
 
@@ -9,4 +11,4 @@ colcon build --symlink-install
 source install/setup.bash
 
 # Launch
-ros2 launch my_robot_bringup my_robot_gazebo.launch.py
+ros2 launch my_robot_bringup my_robot_gazebo.launch.py use_sim_time:=true

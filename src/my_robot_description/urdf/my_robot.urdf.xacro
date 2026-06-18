@@ -1,11 +1,18 @@
 <?xml version='1.0'?>
-<!-- Dummy commit -->
-<robot name='my_robot' xmlns:xacro='http://www.ros.org/wiki/xacro'>
-<xacro:include filename='common_properties.xacro'/>
-<xacro:include filename='mobile_base.xacro'/>
-<xacro:include filename='mobile_base.ros2_control.xacro'/>
-<xacro:include filename='camera.xacro'/>
-<xacro:include filename='lidar.xacro'/>
-<xacro:include filename='imu.xacro'/>
-<!-- <xacro:include filename='mobile_base_gazebo.xacro'/> -->
-</robot>   
+<robot name='my_robot' xmlns:xacro='http://ros.org'>
+  <xacro:arg name='use_ros2_control' default='false'/>
+  <xacro:include filename='common_properties.xacro'/>
+  <xacro:include filename='mobile_base.xacro'/>
+  
+  <!-- Materials/friction apply regardless of control mode -->
+  <xacro:include filename='mobile_base_gazebo.xacro'/>
+
+  <!-- FIX: Added $(arg ...) inside the curly braces to evaluate the argument -->
+  <xacro:if value='$(arg use_ros2_control)'>
+    <xacro:include filename='mobile_base.ros2_control.xacro'/>
+  </xacro:if>
+
+  <xacro:include filename='camera.xacro'/>
+  <xacro:include filename='lidar.xacro'/>
+  <xacro:include filename='imu.xacro'/>
+</robot>

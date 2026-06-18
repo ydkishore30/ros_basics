@@ -7,6 +7,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Comm
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -15,7 +16,8 @@ def generate_launch_description():
     bringup_pkg = FindPackageShare('my_robot_bringup')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
-    use_rviz = LaunchConfiguration('use_rviz')
+    # use_rviz = LaunchConfiguration('use_rviz')
+    use_ros2_control = LaunchConfiguration('use_ros2_control')
 
     # ---------------- URDF ----------------
     xacro_file = PathJoinSubstitution([
@@ -31,7 +33,16 @@ def generate_launch_description():
         'industrial-warehouse.sdf'
     ])
 
-    robot_description = Command(['xacro ', xacro_file])
+
+    robot_description = ParameterValue(
+        Command([
+            'xacro ',
+            xacro_file,
+            ' use_ros2_control:=',
+            use_ros2_control
+        ]),
+        value_type=str
+    )
 
     # ---------------- GAZEBO ----------------
     gazebo = ExecuteProcess(
@@ -39,6 +50,7 @@ def generate_launch_description():
             'gz', 'sim',
             '-v', '4',
             '-r',
+            '-s',
             world_file,
         ],
         output='screen'
@@ -83,6 +95,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='ros2_control_node',
         output='screen',
+        condition=IfCondition(use_ros2_control),
         parameters=[
             {'use_sim_time': use_sim_time},
             {'robot_description': robot_description},
@@ -93,24 +106,28 @@ def generate_launch_description():
     # ---------------- CONTROLLER SPAWNERS (SAFE DELAYED) ----------------
     joint_state_broadcaster = TimerAction(
         period=7.0,
+        condition=IfCondition(use_ros2_control),
         actions=[
             Node(
                 package='controller_manager',
                 executable='spawner',
                 arguments=['joint_state_broadcaster'],
-                output='screen'
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time}] # <--- FIXED: Passed sim time parameter
             )
         ]
     )
 
     diff_drive_controller = TimerAction(
         period=10.0,
+        condition=IfCondition(use_ros2_control),
         actions=[
             Node(
                 package='controller_manager',
                 executable='spawner',
                 arguments=['diff_drive_controller'],
-                output='screen'
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time}] # <--- FIXED: Passed sim time parameter
             )
         ]
     )
@@ -127,7 +144,8 @@ def generate_launch_description():
         executable='parameter_bridge',
         output='screen',
         parameters=[{
-            'config_file': bridge_config
+            'config_file': bridge_config,
+            'use_sim_time': use_sim_time  # <--- CRITICAL FIX: Forces bridge node to match simulation clock
         }]
     )
 
@@ -155,7 +173,6 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        condition=IfCondition(use_rviz),
         arguments=['-d', PathJoinSubstitution([
             description_pkg,
             'rviz',
@@ -171,9 +188,7 @@ def generate_launch_description():
         name='joy_node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time,
-                     
         'device_id': 0,
-        'device_name': '/dev/input/js0',
         'deadzone': 0.05}]
     )
 
@@ -213,6 +228,12 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use Gazebo simulation time'
+        ),
+
+        DeclareLaunchArgument(
+            'use_ros2_control',
+            default_value='true',
+            description='Use ROS2 control with controller_manager'
         ),
 
         # CORE SYSTEM

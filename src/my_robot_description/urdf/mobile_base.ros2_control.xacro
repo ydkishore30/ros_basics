@@ -4,7 +4,7 @@
   <!-- ================= ROS2 CONTROL ================= -->
   <ros2_control name='MobileBaseHardware' type='system'>
     <hardware>
-      <plugin>hardware/MyHardware</plugin>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
       <!-- <param name='serial_port'>/dev/ttyUSB0</param>
       <param name='baud_rate'>115200</param>
       <param name='counts_per_rev'>1260.0</param>

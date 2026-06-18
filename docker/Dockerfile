@@ -16,6 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ============================================================
 RUN apt-get update && apt-get install -y \
     git cmake build-essential \
+    libfmt-dev \
     python3-rosdep python3-colcon-common-extensions \
     python3-pip python3-vcstool \
     nano vim wget curl unzip \
@@ -27,27 +28,19 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# 4. NAVIGATION, ROS2 CONTROL & RUNTIME MANDATORY PACKAGES
+# 4. PACKAGE-DECLARED ROS DEPENDENCIES (driven by package.xml)
 # ============================================================
-RUN apt-get update && apt-get install -y \
-    ros-jazzy-xacro \
-    ros-jazzy-rviz2 \
-    ros-jazzy-joy \
-    ros-jazzy-teleop-twist-joy \
-    ros-jazzy-slam-toolbox \
-    ros-jazzy-navigation2 \
-    ros-jazzy-nav2-bringup \
-    ros-jazzy-nav2-map-server \
-    ros-jazzy-nav2-amcl \
-    ros-jazzy-nav2-lifecycle-manager \
-    ros-jazzy-ros2-control \
-    ros-jazzy-ros2-controllers \
-    ros-jazzy-controller-manager \
-    ros-jazzy-joint-state-broadcaster \
-    ros-jazzy-diff-drive-controller \
-    ros-jazzy-cv-bridge \
-    ros-jazzy-vision-msgs \
-    && rm -rf /var/lib/apt/lists/*
+# gz_ros2_control / ros_gz_bridge / ros_gz_sim are skipped here because they're
+# PC-only (installed conditionally in section 5, not wanted on the Pi image).
+# explore_lite is skipped because it has no rosdep key for jazzy yet
+# (m-explore-ros2 isn't packaged) - build it from source if/when it's needed.
+RUN rosdep init || true && rosdep update
+COPY src/ /tmp/ros2_ws/src/
+RUN apt-get update && rosdep install --from-paths /tmp/ros2_ws/src --ignore-src -r -y \
+    --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite" \
+    && rm -rf /var/lib/apt/lists/* /tmp/ros2_ws
+# cv_bridge isn't declared in any package.xml yet (reserved for the upcoming yolo node)
+RUN apt-get update && apt-get install -y ros-jazzy-cv-bridge && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
 # 5. OPTIONAL GAZEBO SIMULATION (PC ONLY)
@@ -60,9 +53,6 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         ros-jazzy-ros-gz-sim \
         ros-jazzy-ros-gz-bridge \
         ros-jazzy-gz-ros2-control \
-        ros-jazzy-turtlebot3 \
-        ros-jazzy-turtlebot3-msgs \
-        ros-jazzy-turtlebot3-gazebo \
         && rm -rf /var/lib/apt/lists/*; \
     fi
 
@@ -91,9 +81,8 @@ RUN cd /opt/YDLidar-SDK && \
 ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
 
 # ============================================================
-# 8. DEPENDENCY REGISTRY CONFIGURATION
+# 8. WORKSPACE HOUSEKEEPING
 # ============================================================
-RUN rosdep init || true && rosdep update
 RUN touch /usr/lib/python3/dist-packages/numpy/_typing/.colconignore || true
 
 # ============================================================

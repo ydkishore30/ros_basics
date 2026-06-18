@@ -6,6 +6,11 @@ services:
   # ============================================================
   ros-pc:
     profiles: ["pc"]
+
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
     image: ghcr.io/ydkishore30/ros_basics:pc
     network_mode: host
     
@@ -50,6 +55,11 @@ services:
   # ============================================================
   ros-pi:
     profiles: ["pi"]
+
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      
     image: ghcr.io/ydkishore30/ros_basics:pi
     restart: unless-stopped
 

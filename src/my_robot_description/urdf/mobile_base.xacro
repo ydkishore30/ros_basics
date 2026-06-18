@@ -9,14 +9,14 @@
     <xacro:property name='base_height' value='0.12' />
     <xacro:property name='wheel_x_offset' value='${base_length/4}' />
     <xacro:property name='wheel_y_offset' value='${base_width/2 + 0.025}' />
-    <xacro:property name='wheel_separation' value='.34' />
+    <xacro:property name='wheel_separation' value='.35' />
     <xacro:property name='castor_radius' value='0.05' />
     <xacro:property name='castor_length' value='0.1' />
-    <xacro:property name='castor_wheel_radius' value='0.04' />
+    <xacro:property name='castor_wheel_radius' value='0.05' />
     <xacro:property name='castor_wheel_length' value='0.02' />
     <xacro:property name='castor_x_offset' value='${base_length/3}' />
     <xacro:property name='castor_y_offset' value='0' />
-    <xacro:property name='castor_z_offset' value='0' />
+    <xacro:property name='castor_z_offset' value='${castor_wheel_radius/2 - wheel_radius}' />
 
 
     <xacro:macro name='wheel_visual' params='name'>
@@ -28,7 +28,15 @@
                 <origin xyz='0 0 0' rpy='1.5708 0 0' />
                 <material name='grey'/>
             </visual>
-            <xacro:cylinder_inertia m='1.0' r='${wheel_radius}' h='${wheel_length}' 
+            <!-- Stripe marker across the wheel face so rotation is visible in the viewport -->
+            <visual>
+                <geometry>
+                    <box size='${2*wheel_radius + 0.01} 0.01 ${wheel_length + 0.005}' />
+                </geometry>
+                <origin xyz='0 0 0' rpy='1.5708 0 0' />
+                <material name='red'/>
+            </visual>
+            <xacro:cylinder_inertia m='1.0' r='${wheel_radius}' h='${wheel_length}'
             o_xyz='0 0 0' o_rpy='1.5708 0 0'/>
             <collision>
                 <geometry>
@@ -67,15 +75,15 @@
     <link name='castor_wheel_link'>
         <visual>
             <geometry>
-                <sphere radius='${castor_wheel_radius}' />
+                <sphere radius='${castor_wheel_radius/2}' />
             </geometry>
             <origin xyz='0 0 0' rpy='0 0 0' />
             <material name='grey'/>
         </visual>
-        <xacro:sphere_inertia m='0.5' r='${castor_wheel_radius}' o_xyz='0 0 -${castor_wheel_radius}' o_rpy='0 0 0'/>
+        <xacro:sphere_inertia m='0.5' r='${castor_wheel_radius/2}' o_xyz='0 0 0' o_rpy='0 0 0'/>
         <collision>
             <geometry>
-                <sphere radius='${castor_wheel_radius}' />
+                <sphere radius='${castor_wheel_radius/2}' />
             </geometry>
             <origin xyz='0 0 0' rpy='0 0 0' />
         </collision>
@@ -86,22 +94,22 @@
         <child link='right_wheel_link'/>
         <origin xyz='-${wheel_x_offset} -${wheel_y_offset} 0' rpy='0 0 0'/>
         <axis xyz='0 1 0'/>
-        <limit effort='10.0' velocity='10.0'/>
-        <dynamics damping='1.0' friction='1.0'/>
+        <!-- <limit effort='10.0' velocity='10.0'/> -->
+        <!-- <dynamics damping="0.01" friction="0.00"/> -->
     </joint>
     <joint name='base_to_left_wheel' type='continuous'>
         <parent link='base_link'/>
         <child link='left_wheel_link'/>
         <origin xyz='-${wheel_x_offset} ${wheel_y_offset} 0' rpy='0 0 0'/>
         <axis xyz='0 1 0'/>
-        <limit effort='10.0' velocity='10.0'/>
-        <dynamics damping='1.0' friction='1.0'/>
+        <!-- <limit effort='10.0' velocity='10.0'/> -->
+        <!-- <dynamics damping='0.01' friction='0.00'/> -->
     </joint>
 
     <joint name='base_to_castor_wheel' type='fixed'>
         <parent link='base_link'/>
         <child link='castor_wheel_link'/>
-        <origin xyz='${castor_x_offset} ${castor_y_offset} ${castor_z_offset}' rpy='0 0 0'/>
+        <origin xyz='${castor_x_offset} ${castor_y_offset} ${castor_z_offset}' rpy='0 0 ${castor_z_offset}'/>
     </joint>
     
     <joint name='base_joint' type='fixed'>

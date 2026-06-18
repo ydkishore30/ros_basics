@@ -18,7 +18,7 @@ diff_drive_controller:
     # 2. Critical Kinematics Fixes (Calculated from URDF tree data)
     wheel_separation: 0.35
     wheel_radius: 0.04
-    wheel_separation_multiplier: 1.425
+    wheel_separation_multiplier: 1.0
     odom_frame_id: 'odom'
     base_frame_id: 'base_footprint'
 
@@ -44,5 +44,5 @@ diff_drive_controller:
     angular.z.has_acceleration_limits: true
     angular.z.max_velocity: 1.0
     angular.z.min_velocity: -1.0
-    angular.z.max_acceleration: 1.0
-    angular.z.min_acceleration: -1.0
+    angular.z.max_acceleration: 0.5
+    angular.z.min_acceleration: -0.5
