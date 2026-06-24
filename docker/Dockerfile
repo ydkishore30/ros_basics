@@ -39,8 +39,6 @@ COPY src/ /tmp/ros2_ws/src/
 RUN apt-get update && rosdep install --from-paths /tmp/ros2_ws/src --ignore-src -r -y \
     --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite" \
     && rm -rf /var/lib/apt/lists/* /tmp/ros2_ws
-# cv_bridge isn't declared in any package.xml yet (reserved for the upcoming yolo node)
-RUN apt-get update && apt-get install -y ros-jazzy-cv-bridge && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
 # 5. OPTIONAL GAZEBO SIMULATION (PC ONLY)
@@ -57,7 +55,18 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 6. GRAPHICS HARDWARE EXTRACTION
+# 6. YOLO OBJECT DETECTION (PC ONLY)
+# ============================================================
+# ultralytics pulls in torch (CPU wheel, several hundred MB) - skipped on the
+# Pi image since real-time inference on Pi CPU is too slow for a safety-critical
+# stop signal. Re-evaluate if a Pi-compatible accelerator (e.g. Hailo/NPU) is added.
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        pip install --break-system-packages --no-cache-dir ultralytics; \
+    fi
+
+# ============================================================
+# 7. GRAPHICS HARDWARE EXTRACTION
 # ============================================================
 # CRITICAL FIX: Re-declare ARG here so the condition isn't skipped
 ARG TARGETARCH
@@ -68,7 +77,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 7. YDLIDAR SDK SOURCE COMPILATION
+# 8. YDLIDAR SDK SOURCE COMPILATION
 # ============================================================
 # Note: Fixed broken source URI from your template code block
 RUN git clone https://github.com/ydlidar/YDLidar-SDK.git /opt/YDLidar-SDK
@@ -81,12 +90,12 @@ RUN cd /opt/YDLidar-SDK && \
 ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
 
 # ============================================================
-# 8. WORKSPACE HOUSEKEEPING
+# 9. WORKSPACE HOUSEKEEPING
 # ============================================================
 RUN touch /usr/lib/python3/dist-packages/numpy/_typing/.colconignore || true
 
 # ============================================================
-# 9. RUNTIME PIPELINE ANCHORS
+# 10. RUNTIME PIPELINE ANCHORS
 # ============================================================
 WORKDIR /ros2_ws
 ENV TURTLEBOT3_MODEL=burger

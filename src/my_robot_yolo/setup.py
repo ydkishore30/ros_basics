@@ -29,7 +29,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            # Kavalante custom python script entry points ikkada add cheskovachu
+            'yolo_detector_node = my_robot_yolo.yolo_detector_node:main',
+            'safety_monitor_node = my_robot_yolo.safety_monitor_node:main',
         ],
     },
 )

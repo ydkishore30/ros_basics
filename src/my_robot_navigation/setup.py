@@ -36,6 +36,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'set_initial_pose = my_robot_navigation.set_initial_pose:main',
         ],
     },
 )
