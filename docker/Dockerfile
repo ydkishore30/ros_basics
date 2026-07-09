@@ -62,6 +62,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 # stop signal. Re-evaluate if a Pi-compatible accelerator (e.g. Hailo/NPU) is added.
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        pip install --break-system-packages --no-cache-dir \
+            torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
         pip install --break-system-packages --no-cache-dir ultralytics; \
     fi
 
