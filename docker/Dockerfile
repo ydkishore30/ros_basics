@@ -66,7 +66,18 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 7. GRAPHICS HARDWARE EXTRACTION
+# 7. REINFORCEMENT LEARNING STACK (PC ONLY)
+# ============================================================
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        pip install --break-system-packages --no-cache-dir \
+            gymnasium \
+            stable-baselines3[extra] \
+            tensorboard; \
+    fi
+
+# ============================================================
+# 8. GRAPHICS HARDWARE EXTRACTION
 # ============================================================
 # CRITICAL FIX: Re-declare ARG here so the condition isn't skipped
 ARG TARGETARCH
@@ -77,7 +88,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 8. YDLIDAR SDK SOURCE COMPILATION
+# 9. YDLIDAR SDK SOURCE COMPILATION
 # ============================================================
 # Note: Fixed broken source URI from your template code block
 RUN git clone https://github.com/ydlidar/YDLidar-SDK.git /opt/YDLidar-SDK
@@ -90,12 +101,12 @@ RUN cd /opt/YDLidar-SDK && \
 ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
 
 # ============================================================
-# 9. WORKSPACE HOUSEKEEPING
+# 10. WORKSPACE HOUSEKEEPING
 # ============================================================
 RUN touch /usr/lib/python3/dist-packages/numpy/_typing/.colconignore || true
 
 # ============================================================
-# 10. RUNTIME PIPELINE ANCHORS
+# 11. RUNTIME PIPELINE ANCHORS
 # ============================================================
 WORKDIR /ros2_ws
 ENV TURTLEBOT3_MODEL=burger

@@ -13,10 +13,12 @@ setup(
         ('share/' + package_name + '/launch', [
             'launch/nav2.launch.py',
             'launch/localization.launch.py',
+            'launch/apriltag_dock.launch.py',
         ]),
         ('share/' + package_name + '/config', [
             'config/nav2_params.yaml',
             'config/amcl_params.yaml',
+            'config/apriltag.yaml',
         ]),
         ('share/' + package_name + '/maps', [
             'maps/my_map.yaml',
@@ -37,6 +39,8 @@ setup(
     entry_points={
         'console_scripts': [
             'set_initial_pose = my_robot_navigation.set_initial_pose:main',
+            'dock_pose_publisher = my_robot_navigation.dock_pose_publisher:main',
+            'dock_robot = my_robot_navigation.dock_robot:main',
         ],
     },
 )

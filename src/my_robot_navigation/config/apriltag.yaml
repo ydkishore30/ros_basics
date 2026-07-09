@@ -1,0 +1,11 @@
+/**:
+    ros__parameters:
+        image_transport: raw
+        family: 36h11
+        size: 0.162
+        max_hamming: 0
+
+        tag:
+            ids: [0]
+            frames: ['dock']
+            sizes: [0.162]

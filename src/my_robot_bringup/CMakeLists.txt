@@ -29,7 +29,7 @@ install(
 )
 
 install(
-  PROGRAMS scripts/twist_converter.py
+  PROGRAMS scripts/twist_converter.py scripts/micro_ros_bridge.py
   DESTINATION lib/${PROJECT_NAME}/
 )
 

@@ -50,6 +50,7 @@ def generate_launch_description():
             'gz', 'sim',
             '-v', '4',
             '-r',
+            '-s',
             world_file,
         ],
         output='screen'

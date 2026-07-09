@@ -2,15 +2,9 @@
 
 from launch import LaunchDescription
 
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
-from launch.conditions import IfCondition
+from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessExit, OnProcessStart
-
-from launch.substitutions import (
-    Command,
-    LaunchConfiguration,
-    PathJoinSubstitution
-)
+from launch.substitutions import Command, PathJoinSubstitution
 
 
 from launch_ros.actions import Node
@@ -32,7 +26,11 @@ def generate_launch_description():
     ])
 
     # Convert Xacro -> URDF
-    robot_description = Command(['xacro ', xacro_file])
+    robot_description = Command([
+        'xacro ', xacro_file,
+        ' use_ros2_control:=true',
+        ' use_sim_hardware:=false',
+    ])
 
     # ------------------------------
     # Robot State Publisher

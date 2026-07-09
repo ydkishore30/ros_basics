@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import time
+
 import rclpy
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from geometry_msgs.msg import PoseStamped
@@ -51,7 +53,7 @@ def main():
     navigator.followWaypoints(waypoints)
 
     while not navigator.isTaskComplete():
-        pass
+        time.sleep(0.1)
 
     navigator.get_logger().info('Finished following waypoints.')
     rclpy.shutdown()

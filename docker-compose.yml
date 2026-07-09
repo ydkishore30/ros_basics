@@ -30,6 +30,9 @@ services:
       - XAUTHORITY=/root/.Xauthority
       - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
       - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
+      # Forces rendering onto the NVIDIA GPU instead of the Intel iGPU (PRIME offload)
+      - __NV_PRIME_RENDER_OFFLOAD=1
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
 
     # Anchor shared volumes so we don't have to duplicate lines for the Pi
     volumes: &shared-volumes

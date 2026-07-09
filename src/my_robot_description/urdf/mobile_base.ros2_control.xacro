@@ -1,15 +1,37 @@
 <?xml version='1.0'?>
 <robot name='my_robot' xmlns:xacro='http://www.ros.org/wiki/xacro'>
 
+  <!--
+    Hardware mode selection (mutually exclusive):
+      use_sim_hardware:=true   → Gazebo physics (default for simulation launch)
+      use_mock_hardware:=true  → mock_components/GenericSystem (CI / desktop testing, no robot needed)
+      both false               → hardware/MyHardware via serial (real robot)
+  -->
+  <xacro:arg name='use_sim_hardware'  default='true'/>
+  <xacro:arg name='use_mock_hardware' default='false'/>
+  <!-- Serial port for real hardware -->
+  <xacro:arg name='serial_port'       default='/dev/ttyUSB0'/>
+
   <!-- ================= ROS2 CONTROL ================= -->
   <ros2_control name='MobileBaseHardware' type='system'>
     <hardware>
-      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-      <!-- <param name='serial_port'>/dev/ttyUSB0</param>
-      <param name='baud_rate'>115200</param>
-      <param name='counts_per_rev'>1260.0</param>
-      <param name='wheel_radius'>0.035</param>
-      <param name='wheel_base'>0.34</param> -->
+      <xacro:if value='$(arg use_sim_hardware)'>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </xacro:if>
+      <xacro:if value='$(arg use_mock_hardware)'>
+        <plugin>mock_components/GenericSystem</plugin>
+        <param name='fake_sensor_commands'>false</param>
+      </xacro:if>
+      <xacro:unless value='$(arg use_sim_hardware)'>
+        <xacro:unless value='$(arg use_mock_hardware)'>
+          <plugin>hardware/MyHardware</plugin>
+          <param name='serial_port'>$(arg serial_port)</param>
+          <param name='baud_rate'>115200</param>
+          <param name='counts_per_rev'>1260.0</param>
+          <param name='wheel_radius'>0.035</param>
+          <param name='wheel_base'>0.34</param>
+        </xacro:unless>
+      </xacro:unless>
     </hardware>
 
     <joint name='base_to_left_wheel'>
@@ -28,17 +50,13 @@
 
   </ros2_control>
 
-  <!-- ================= GAZEBO PLUGIN ================= -->
-<!-- <gazebo>
-  <plugin filename='gz_ros2_control-system'
-          name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
-      <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
- </plugin>
-</gazebo> -->  <!-- ================= GAZEBO PLUGIN ================= -->
-<gazebo>
-  <plugin filename='/opt/ros/jazzy/lib/libgz_ros2_control-system.so' name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
-      <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
- </plugin>
-</gazebo>
+  <!-- Gazebo plugin only in simulation -->
+  <xacro:if value='$(arg use_sim_hardware)'>
+    <gazebo>
+      <plugin filename='/opt/ros/jazzy/lib/libgz_ros2_control-system.so' name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
+          <parameters>$(find my_robot_bringup)/config/my_robot_controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:if>
 
 </robot>

@@ -210,5 +210,11 @@
       <direction>0.1 0.1 -1</direction>
     </light>
 
+    <include>
+      <uri>model://apriltag_dock_marker</uri>
+      <name>dock_marker</name>
+      <pose>2.0 0.0 0.2 0 0 3.14159</pose>
+    </include>
+
   </world>
 </sdf>
