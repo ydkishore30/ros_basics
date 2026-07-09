@@ -55,17 +55,12 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 6. YOLO OBJECT DETECTION (PC ONLY)
+# 6. MICRO-ROS AGENT (BOTH ARCHITECTURES)
 # ============================================================
-# ultralytics pulls in torch (CPU wheel, several hundred MB) - skipped on the
-# Pi image since real-time inference on Pi CPU is too slow for a safety-critical
-# stop signal. Re-evaluate if a Pi-compatible accelerator (e.g. Hailo/NPU) is added.
-ARG TARGETARCH
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-        pip install --break-system-packages --no-cache-dir \
-            torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-        pip install --break-system-packages --no-cache-dir ultralytics; \
-    fi
+# Bridges ESP32 micro-ROS (WiFi/UDP or serial) to the ROS2 DDS network.
+# Installed on both PC and Pi so either can run: ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+RUN apt-get update && apt-get install -y ros-jazzy-micro-ros-agent \
+    && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
 # 7. REINFORCEMENT LEARNING STACK (PC ONLY)
