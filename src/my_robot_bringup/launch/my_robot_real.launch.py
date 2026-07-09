@@ -140,7 +140,7 @@ def generate_launch_description():
     teleop_node = Node(
         package='teleop_twist_joy',
         executable='teleop_node',
-        name='teleop_twist_joy',
+        name='teleop_twist_joy_node',
         output='screen',
         parameters=[PathJoinSubstitution([
             FindPackageShare('my_robot_bringup'),
@@ -149,11 +149,20 @@ def generate_launch_description():
         ])]
     )
 
-    # Twist converter node (converts Twist to TwistStamped)
-    twist_converter_node = Node(
+    # micro-ROS agent: bridges ESP32 (WiFi/UDP) ↔ ROS2 DDS
+    micro_ros_agent = Node(
+        package='micro_ros_agent',
+        executable='micro_ros_agent',
+        name='micro_ros_agent',
+        arguments=['udp4', '--port', '8888'],
+        output='screen'
+    )
+
+    # micro-ROS bridge: cmd_vel → /wheel_cmd and /telemetry → /odom + TF
+    micro_ros_bridge = Node(
         package='my_robot_bringup',
-        executable='twist_converter.py',
-        name='twist_converter',
+        executable='micro_ros_bridge.py',
+        name='micro_ros_bridge',
         output='screen'
     )
 
@@ -189,8 +198,8 @@ def generate_launch_description():
         ekf_node,   # ✅ ADD THIS
 
         # rviz_node,
-        # Joystick control with twist converter
+        micro_ros_agent,
+        micro_ros_bridge,
         joy_node,
         teleop_node,
-        twist_converter_node,
     ])
