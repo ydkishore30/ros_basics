@@ -55,21 +55,24 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 6. MICRO-ROS AGENT (BOTH ARCHITECTURES)
+# 6. MICRO-ROS AGENT (PC / amd64 ONLY)
 # ============================================================
-# ros-jazzy-micro-ros-agent is not in apt — build from source directly
-# (bypasses create_agent_ws.sh which requires interactive shell / ROS daemon)
-RUN bash -c " \
-    set -e && \
-    mkdir -p /opt/uros_ws/src && \
-    cd /opt/uros_ws && \
-    git clone -b jazzy https://github.com/micro-ROS/micro_ros_msgs.git src/micro_ros_msgs && \
-    git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git src/micro-ROS-Agent && \
-    source /opt/ros/jazzy/setup.bash && \
-    apt-get update && \
-    rosdep install --from-paths src --ignore-src -r -y && \
-    rm -rf /var/lib/apt/lists/* && \
-    colcon build --packages-up-to micro_ros_agent"
+# Skipped on arm64: QEMU-emulated C++ compilation is unreliable in CI.
+# Pi users who need the agent can build it inside the mounted workspace.
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    bash -c " \
+        set -e && \
+        mkdir -p /opt/uros_ws/src && \
+        cd /opt/uros_ws && \
+        git clone -b jazzy https://github.com/micro-ROS/micro_ros_msgs.git src/micro_ros_msgs && \
+        git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git src/micro-ROS-Agent && \
+        source /opt/ros/jazzy/setup.bash && \
+        apt-get update && \
+        rosdep install --from-paths src --ignore-src -r -y && \
+        rm -rf /var/lib/apt/lists/* && \
+        colcon build --packages-up-to micro_ros_agent"; \
+fi
 
 # ============================================================
 # 7. REINFORCEMENT LEARNING STACK (PC ONLY)
@@ -118,7 +121,7 @@ WORKDIR /ros2_ws
 ENV TURTLEBOT3_MODEL=burger
 
 RUN echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc
-RUN echo 'source /opt/uros_ws/install/local_setup.bash' >> ~/.bashrc
+RUN echo 'if [ -f /opt/uros_ws/install/local_setup.bash ]; then source /opt/uros_ws/install/local_setup.bash; fi' >> ~/.bashrc
 RUN echo 'if [ -f /ros2_ws/install/setup.bash ]; then source /ros2_ws/install/setup.bash; fi' >> ~/.bashrc
 
 CMD ["/bin/bash"]
