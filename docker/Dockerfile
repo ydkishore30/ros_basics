@@ -74,7 +74,7 @@ RUN bash -c " \
 # ============================================================
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-        pip install --break-system-packages --no-cache-dir \
+        pip install --break-system-packages --no-cache-dir --ignore-installed \
             gymnasium \
             stable-baselines3[extra] \
             tensorboard; \
