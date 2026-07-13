@@ -57,10 +57,17 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 # ============================================================
 # 6. MICRO-ROS AGENT (BOTH ARCHITECTURES)
 # ============================================================
-# Bridges ESP32 micro-ROS (WiFi/UDP or serial) to the ROS2 DDS network.
-# Installed on both PC and Pi so either can run: ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
-RUN apt-get update && apt-get install -y ros-jazzy-micro-ros-agent \
-    && rm -rf /var/lib/apt/lists/*
+# ros-jazzy-micro-ros-agent is not in apt — build from source via micro_ros_setup
+RUN bash -c " \
+    set -e && \
+    mkdir -p /opt/uros_ws/src && \
+    cd /opt/uros_ws && \
+    git clone -b jazzy https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup && \
+    source /opt/ros/jazzy/setup.bash && \
+    colcon build --packages-select micro_ros_setup && \
+    source install/local_setup.bash && \
+    ros2 run micro_ros_setup create_agent_ws.sh && \
+    colcon build --packages-up-to micro_ros_agent"
 
 # ============================================================
 # 7. REINFORCEMENT LEARNING STACK (PC ONLY)
@@ -109,6 +116,7 @@ WORKDIR /ros2_ws
 ENV TURTLEBOT3_MODEL=burger
 
 RUN echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc
+RUN echo 'source /opt/uros_ws/install/local_setup.bash' >> ~/.bashrc
 RUN echo 'if [ -f /ros2_ws/install/setup.bash ]; then source /ros2_ws/install/setup.bash; fi' >> ~/.bashrc
 
 CMD ["/bin/bash"]
