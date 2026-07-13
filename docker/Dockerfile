@@ -57,16 +57,18 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 # ============================================================
 # 6. MICRO-ROS AGENT (BOTH ARCHITECTURES)
 # ============================================================
-# ros-jazzy-micro-ros-agent is not in apt — build from source via micro_ros_setup
+# ros-jazzy-micro-ros-agent is not in apt — build from source directly
+# (bypasses create_agent_ws.sh which requires interactive shell / ROS daemon)
 RUN bash -c " \
     set -e && \
     mkdir -p /opt/uros_ws/src && \
     cd /opt/uros_ws && \
-    git clone -b jazzy https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup && \
+    git clone -b jazzy https://github.com/micro-ROS/micro_ros_msgs.git src/micro_ros_msgs && \
+    git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git src/micro-ROS-Agent && \
     source /opt/ros/jazzy/setup.bash && \
-    colcon build --packages-select micro_ros_setup && \
-    source install/local_setup.bash && \
-    ros2 run micro_ros_setup create_agent_ws.sh && \
+    apt-get update && \
+    rosdep install --from-paths src --ignore-src -r -y && \
+    rm -rf /var/lib/apt/lists/* && \
     colcon build --packages-up-to micro_ros_agent"
 
 # ============================================================
@@ -74,10 +76,10 @@ RUN bash -c " \
 # ============================================================
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-        pip install --break-system-packages --no-cache-dir --ignore-installed \
-            gymnasium \
-            stable-baselines3[extra] \
-            tensorboard; \
+        pip install --break-system-packages --no-cache-dir \
+            torch --index-url https://download.pytorch.org/whl/cpu && \
+        pip install --break-system-packages --no-cache-dir \
+            gymnasium stable-baselines3 tensorboard; \
     fi
 
 # ============================================================
