@@ -100,16 +100,23 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 # ============================================================
-# 9. YDLIDAR SDK SOURCE COMPILATION
+# 9. YDLIDAR SDK SOURCE COMPILATION (amd64 only in CI)
 # ============================================================
-# Note: Fixed broken source URI from your template code block
-RUN git clone https://github.com/ydlidar/YDLidar-SDK.git /opt/YDLidar-SDK
-RUN cd /opt/YDLidar-SDK && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig
+# Skipped on arm64: cmake+make under QEMU emulation is very slow.
+# Pi users: the SDK source is at /opt/YDLidar-SDK — run the cmake/make steps
+# once inside the container on the real Pi hardware.
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        git clone https://github.com/ydlidar/YDLidar-SDK.git /opt/YDLidar-SDK && \
+        cd /opt/YDLidar-SDK && \
+        mkdir build && cd build && \
+        cmake .. && \
+        make -j$(nproc) && \
+        make install && \
+        ldconfig; \
+    else \
+        git clone https://github.com/ydlidar/YDLidar-SDK.git /opt/YDLidar-SDK; \
+    fi
 ENV ydlidar_sdk_DIR=/opt/YDLidar-SDK
 
 # ============================================================

@@ -3,24 +3,23 @@ name: Build and Push ROS 2 Multi-Arch Images
 on:
   push:
     branches:
-      - main  # Change to master if your default branch is master
+      - main
 
 jobs:
-  build-and-push:
+  # ============================================================
+  # PC IMAGE (linux/amd64) — native execution, fast
+  # ============================================================
+  build-pc:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write  # Grants permission to upload to ghcr.io
+      packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (ARM Emulation)
-        uses: docker/setup-qemu-action@v3
-        # Lets the GitHub server build ARM64 images for the Raspberry Pi
-
-      - name: Set up Docker Buildx (BuildKit Engine)
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
@@ -28,36 +27,54 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} # Auto-injected by GitHub
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ============================================================
-      # 1. BUILD & PUSH LOCAL PC IMAGE (linux/amd64)
-      # ============================================================
       - name: Build and push PC image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile
           platforms: linux/amd64
-          build-args: |
-            TARGETARCH=amd64
+          build-args: TARGETARCH=amd64
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/ros_basics:pc
-          cache-from: type=gha # Speeds up subsequent builds using GitHub cache
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
 
-      # ============================================================
-      # 2. BUILD & PUSH RASPBERRY PI IMAGE (linux/arm64)
-      # ============================================================
+  # ============================================================
+  # PI IMAGE (linux/arm64) — QEMU emulation, runs in parallel
+  # ============================================================
+  build-pi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (ARM Emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push Pi image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile
           platforms: linux/arm64
-          build-args: |
-            TARGETARCH=arm64
+          build-args: TARGETARCH=arm64
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/ros_basics:pi
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,mode=max,scope=arm64
