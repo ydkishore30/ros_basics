@@ -136,7 +136,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Teleop node (converts joystick to Twist)
+    # Teleop node: publishes Twist on /cmd_vel
     teleop_node = Node(
         package='teleop_twist_joy',
         executable='teleop_node',
@@ -147,6 +147,14 @@ def generate_launch_description():
             'config',
             'teleop_joy.yaml',
         ])]
+    )
+
+    # Twist → TwistStamped converter (diff_drive_controller v4+ requires TwistStamped)
+    twist_converter = Node(
+        package='my_robot_bringup',
+        executable='twist_converter.py',
+        name='twist_converter',
+        output='screen'
     )
 
     # micro-ROS agent: bridges ESP32 (WiFi/UDP) ↔ ROS2 DDS
@@ -202,4 +210,5 @@ def generate_launch_description():
         micro_ros_bridge,
         joy_node,
         teleop_node,
+        twist_converter,
     ])

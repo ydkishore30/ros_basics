@@ -31,7 +31,7 @@ diff_drive_controller:
 
     open_loop: false
     enable_odom_tf: false
-    use_stamped_vel: true
+    use_stamped_vel: false
 
     # Velocity and acceleration limits
     linear.x.has_velocity_limits: true
