@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y \
     libusb-1.0-0-dev libserial-dev \
     libglib2.0-dev libxerces-c-dev libtinyxml2-dev \
     python3-opencv \
-    joystick evtest input-utils \
-    && rm -rf /var/lib/apt/lists/*
+    joystick evtest input-utils
+# Note: apt lists are intentionally kept here for the rosdep step below.
 
 # ============================================================
 # 4. PACKAGE-DECLARED ROS DEPENDENCIES (driven by package.xml)
@@ -36,8 +36,11 @@ RUN apt-get update && apt-get install -y \
 # (m-explore-ros2 isn't packaged) - build it from source if/when it's needed.
 RUN rosdep init || true && rosdep update
 COPY src/ /tmp/ros2_ws/src/
-RUN apt-get update && rosdep install --from-paths /tmp/ros2_ws/src --ignore-src -r -y \
-    --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite" \
+# Use apt lists fetched in step 3 (no apt-get update here — ports.ubuntu.com is
+# unreachable from QEMU arm64 CI runners and the lists were already refreshed above).
+# ament_python is a ROS build type, not an apt package; gcc/g++-multilib are amd64-only.
+RUN rosdep install --from-paths /tmp/ros2_ws/src --ignore-src -r -y \
+    --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite ament_python gcc-multilib g++-multilib" \
     && rm -rf /var/lib/apt/lists/* /tmp/ros2_ws
 
 # ============================================================
