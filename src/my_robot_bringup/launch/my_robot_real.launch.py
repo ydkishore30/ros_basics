@@ -133,7 +133,8 @@ def generate_launch_description():
         package='joy',
         executable='joy_node',
         name='joy_node',
-        output='screen'
+        output='screen',
+        parameters=[{'dev': '/dev/input/event27'}]
     )
 
     # Teleop node: publishes Twist on /cmd_vel
