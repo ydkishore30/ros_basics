@@ -21,6 +21,9 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <termios.h>
+#include <sys/select.h>
+#include <thread>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -114,6 +117,16 @@ hardware_interface::CallbackReturn MyHardware::on_configure(
     serial_port_->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
 
     RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Serial port opened successfully");
+
+    // Opening the port toggles DTR which resets the ESP32 (CP2102 auto-reset).
+    // Wait for it to finish booting before the RT loop starts sending commands.
+    RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Waiting 3s for ESP32 boot after DTR reset...");
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
+    // Discard any garbage the ESP32 sent during boot
+    int fd = serial_port_->native_handle();
+    ::tcflush(fd, TCIOFLUSH);
+
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Failed to open serial port: %s", e.what());
     return hardware_interface::CallbackReturn::ERROR;
@@ -196,8 +209,20 @@ hardware_interface::CallbackReturn MyHardware::on_deactivate(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+// Returns true if data is available on fd within timeout_ms, false on timeout.
+static bool waitForSerial(int fd, int timeout_ms)
+{
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(fd, &rfds);
+  struct timeval tv;
+  tv.tv_sec  = timeout_ms / 1000;
+  tv.tv_usec = (timeout_ms % 1000) * 1000;
+  return ::select(fd + 1, &rfds, nullptr, nullptr, &tv) > 0;
+}
+
 hardware_interface::return_type MyHardware::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   if (!serial_port_ || !serial_port_->is_open()) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Serial port not available");
@@ -205,69 +230,59 @@ hardware_interface::return_type MyHardware::read(
   }
 
   try {
-    // Read data from Arduino
-    boost::asio::streambuf buffer;
     boost::system::error_code ec;
-    size_t bytes_read = boost::asio::read_until(*serial_port_, buffer, '\n', ec);
+    const double rad_per_count = 2.0 * M_PI / counts_per_rev_;
+    const int fd = serial_port_->native_handle();
 
-    
-    if (!ec && bytes_read > 0) {
-      
-      std::istream is(&buffer);
-      std::string data;
-      std::getline(is, data);
-
-      // RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Received from Arduino: %s", data.c_str());
-
-      // Parse Arduino data (format: "pos_left,pos_right,vel_left,vel_right")
-      std::stringstream ss(data);
-      std::string token;
-      std::vector<double> values;
-
-      while (std::getline(ss, token, ',')) {
-        try {
-          values.push_back(std::stod(token));
-        } catch (const std::exception &) {
-          // Skip invalid values
-        }
-      }
-    
-      // for (size_t i = 0; i < values.size(); i++)
-      //   {
-      //     RCLCPP_INFO(
-      //         rclcpp::get_logger("MyHardware"),
-      //         "values[%zu] = %f",
-      //         i,
-      //         values[i]);
-      //   }
-
-      if (values.size() >= 4) {
-        // Convert encoder counts to radians
-        double rad_per_count = 2.0 * M_PI / counts_per_rev_;
-        hw_positions_[0] = values[0] * rad_per_count;  // left position in radians
-        hw_positions_[1] = values[1] * rad_per_count;  // right position in radians
-        hw_velocities_[0] = values[2] * rad_per_count; // left velocity in rad/s
-        hw_velocities_[1] = values[3] * rad_per_count; // right velocity in rad/s
-
-        // Calculate effort (simplified)
-        hw_efforts_[0] = hw_velocities_[0] * 0.1;
-        hw_efforts_[1] = hw_velocities_[1] * 0.1;
-      } else {
-        // Fallback to simulation if parsing failed
-        for (size_t i = 0; i < hw_positions_.size(); ++i) {
-          hw_positions_[i] += hw_commands_[i] * period.seconds();
-          hw_velocities_[i] = hw_commands_[i];
-          hw_efforts_[i] = hw_commands_[i] * 0.1;
+    // ── Encoder counts → position ────────────────────────────────────────────
+    // Protocol: send "E\n", firmware replies "E <left_count> <right_count>\n"
+    boost::asio::write(*serial_port_, boost::asio::buffer(std::string("E\n")));
+    if (waitForSerial(fd, 500)) {
+      boost::asio::streambuf buf;
+      boost::asio::read_until(*serial_port_, buf, '\n', ec);
+      if (!ec) {
+        std::istream is(&buf);
+        std::string line;
+        std::getline(is, line);
+        if (line.size() >= 2 && line[0] == 'E') {
+          std::istringstream ss(line.substr(2));
+          long left_count = 0, right_count = 0;
+          if (ss >> left_count >> right_count) {
+            hw_positions_[0] = static_cast<double>(left_count)  * rad_per_count;
+            hw_positions_[1] = static_cast<double>(right_count) * rad_per_count;
+          }
         }
       }
     } else {
-      // No data received, use simulation
-      for (size_t i = 0; i < hw_positions_.size(); ++i) {
-        hw_positions_[i] += hw_commands_[i] * period.seconds();
-        hw_velocities_[i] = hw_commands_[i];
-        hw_efforts_[i] = hw_commands_[i] * 0.1;
-      }
+      RCLCPP_WARN(rclcpp::get_logger("MyHardware"), "Encoder read timed out (E cmd)");
     }
+
+    // ── Wheel RPM → velocity ─────────────────────────────────────────────────
+    // Protocol: send "R\n", firmware replies "R <left_rpm> <right_rpm>\n"
+    boost::asio::write(*serial_port_, boost::asio::buffer(std::string("R\n")));
+    if (waitForSerial(fd, 500)) {
+      boost::asio::streambuf buf;
+      boost::asio::read_until(*serial_port_, buf, '\n', ec);
+      if (!ec) {
+        std::istream is(&buf);
+        std::string line;
+        std::getline(is, line);
+        if (line.size() >= 2 && line[0] == 'R') {
+          std::istringstream ss(line.substr(2));
+          float left_rpm = 0.0f, right_rpm = 0.0f;
+          if (ss >> left_rpm >> right_rpm) {
+            // RPM → rad/s
+            hw_velocities_[0] = static_cast<double>(left_rpm)  * 2.0 * M_PI / 60.0;
+            hw_velocities_[1] = static_cast<double>(right_rpm) * 2.0 * M_PI / 60.0;
+          }
+        }
+      }
+    } else {
+      RCLCPP_WARN(rclcpp::get_logger("MyHardware"), "RPM read timed out (R cmd)");
+    }
+
+    hw_efforts_[0] = hw_velocities_[0] * 0.1;
+    hw_efforts_[1] = hw_velocities_[1] * 0.1;
 
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Error reading from serial port: %s", e.what());
@@ -286,15 +301,14 @@ hardware_interface::return_type MyHardware::write(
   }
 
   try {
-    // Send velocity commands to Arduino
-    // Scale from rad/s to -1 to 1 (assuming max 10 rad/s)
-    double max_angular_vel = 10.0;
-    double left_scaled = hw_commands_[0] / max_angular_vel;
-    double right_scaled = hw_commands_[1] / max_angular_vel;
-    
-    // Format: "left_vel,right_vel\n"
+    // Scale rad/s → [-1, 1]: max wheel speed = 0.35 m/s / 0.035 m = 10 rad/s
+    constexpr double MAX_RAD_S = 10.0;
+    double left_scaled  = std::max(-1.0, std::min(1.0, hw_commands_[0] / MAX_RAD_S));
+    double right_scaled = std::max(-1.0, std::min(1.0, hw_commands_[1] / MAX_RAD_S));
+
+    // Protocol: "<left> <right>\n"  (space-separated, [-1,1])
     std::string command = std::to_string(left_scaled) + " " +
-                         std::to_string(right_scaled) + "\n";
+                          std::to_string(right_scaled) + "\n";
 
     boost::asio::write(*serial_port_, boost::asio::buffer(command));
 

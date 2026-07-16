@@ -27,7 +27,7 @@
           <plugin>hardware/MyHardware</plugin>
           <param name='serial_port'>$(arg serial_port)</param>
           <param name='baud_rate'>115200</param>
-          <param name='counts_per_rev'>1260.0</param>
+          <param name='counts_per_rev'>2520.0</param>
           <param name='wheel_radius'>0.035</param>
           <param name='wheel_base'>0.34</param>
         </xacro:unless>
