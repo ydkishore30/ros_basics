@@ -29,7 +29,11 @@ install(
 )
 
 install(
-  PROGRAMS scripts/twist_converter.py scripts/micro_ros_bridge.py
+  PROGRAMS
+    scripts/twist_converter.py
+    scripts/micro_ros_bridge.py
+    scripts/bno_imu_node.py
+    scripts/bno_imu_sim.py
   DESTINATION lib/${PROJECT_NAME}/
 )
 

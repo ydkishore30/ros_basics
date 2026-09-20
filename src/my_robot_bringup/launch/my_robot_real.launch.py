@@ -1,21 +1,21 @@
-"""Launch file for robot simulation and controller startup."""
+"""Launch file for real hardware bringup."""
 
 from launch import LaunchDescription
-
-from launch.actions import RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit, OnProcessStart
-from launch.substitutions import Command, PathJoinSubstitution
-
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    """Generate launch description for robot bringup."""
-    # ------------------------------
-    # Find description package
-    # ------------------------------
+    """Generate launch description for real hardware bringup."""
+    joy_dev = LaunchConfiguration('joy_dev')
+    serial_port = LaunchConfiguration('serial_port')
+    use_bno = LaunchConfiguration('use_bno')
+
     description_pkg = FindPackageShare('my_robot_description')
 
     # Xacro file
@@ -30,6 +30,7 @@ def generate_launch_description():
         'xacro ', xacro_file,
         ' use_ros2_control:=true',
         ' use_sim_hardware:=false',
+        ' serial_port:=', serial_port,
     ])
 
     # ------------------------------
@@ -134,7 +135,7 @@ def generate_launch_description():
         executable='joy_node',
         name='joy_node',
         output='screen',
-        parameters=[{'dev': '/dev/input/event27'}]
+        parameters=[{'dev': joy_dev}]
     )
 
     # Teleop node: publishes Twist on /cmd_vel
@@ -158,25 +159,8 @@ def generate_launch_description():
         output='screen'
     )
 
-    # micro-ROS agent: bridges ESP32 (WiFi/UDP) ↔ ROS2 DDS
-    micro_ros_agent = Node(
-        package='micro_ros_agent',
-        executable='micro_ros_agent',
-        name='micro_ros_agent',
-        arguments=['udp4', '--port', '8888'],
-        output='screen'
-    )
-
-    # micro-ROS bridge: cmd_vel → /wheel_cmd and /telemetry → /odom + TF
-    micro_ros_bridge = Node(
-        package='my_robot_bringup',
-        executable='micro_ros_bridge.py',
-        name='micro_ros_bridge',
-        output='screen'
-    )
-
     ekf_config = PathJoinSubstitution([
-        FindPackageShare('my_robot_bringup'),
+        FindPackageShare('my_robot_description'),
         'config',
         'ekf.yaml',
     ])
@@ -191,24 +175,49 @@ def generate_launch_description():
         }]
     )
 
+    bno_imu_node = Node(
+        package='my_robot_bringup',
+        executable='bno_imu_node.py',
+        name='bno_imu_node',
+        output='screen',
+        condition=IfCondition(use_bno),
+        parameters=[{
+            'serial_port': LaunchConfiguration('imu_port'),
+            'baud_rate': 115200,
+            'frame_id': 'imu_link',
+        }]
+    )
+
     # ------------------------------
     # Launch description
     # ------------------------------
     return LaunchDescription([
-        # DeclareLaunchArgument(
-        #     'use_rviz',
-        #     default_value='true',
-        #     description='Whether to launch RViz2',
-        # ),
+        DeclareLaunchArgument(
+            'serial_port',
+            default_value='/dev/ttyUSB0',
+            description='Serial port for motor controller + BNO IMU (Arduino/ESP32)'
+        ),
+        DeclareLaunchArgument(
+            'imu_port',
+            default_value='/dev/ttyACM0',
+            description='Serial port for BNO IMU (must be DIFFERENT from serial_port)'
+        ),
+        DeclareLaunchArgument(
+            'use_bno',
+            default_value='false',
+            description='Deprecated — BNO IMU is now published by the hardware interface directly'
+        ),
+        DeclareLaunchArgument(
+            'joy_dev',
+            default_value='/dev/input/event0',
+            description='Joystick device path (check with: ls /dev/input/by-id/)'
+        ),
         robot_state_publisher,
         controller_manager,
         joint_state_after_controller,
         diff_drive_after_joint,
-        ekf_node,   # ✅ ADD THIS
-
-        # rviz_node,
-        micro_ros_agent,
-        micro_ros_bridge,
+        bno_imu_node,
+        ekf_node,
         joy_node,
         teleop_node,
         twist_converter,

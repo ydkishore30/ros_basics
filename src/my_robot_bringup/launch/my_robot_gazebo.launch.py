@@ -1,8 +1,10 @@
 """Launch file for robot simulation and controller startup."""
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, TimerAction, IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
 
 from launch_ros.actions import Node
@@ -18,6 +20,9 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     # use_rviz = LaunchConfiguration('use_rviz')
     use_ros2_control = LaunchConfiguration('use_ros2_control')
+    use_nav2 = LaunchConfiguration('use_nav2')
+    use_slam = LaunchConfiguration('use_slam')
+    use_dock = LaunchConfiguration('use_dock')
 
     # ---------------- URDF ----------------
     xacro_file = PathJoinSubstitution([
@@ -50,7 +55,6 @@ def generate_launch_description():
             'gz', 'sim',
             '-v', '4',
             '-r',
-            '-s',
             world_file,
         ],
         output='screen'
@@ -103,33 +107,34 @@ def generate_launch_description():
         ]
     )
 
-    # ---------------- CONTROLLER SPAWNERS (SAFE DELAYED) ----------------
+    # ---------------- CONTROLLER SPAWNERS (CHAINED) ----------------
+    # Use a timer to wait for the robot to spawn in Gazebo before activating controllers
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+        output='screen',
+    )
+
     joint_state_broadcaster = TimerAction(
         period=7.0,
         condition=IfCondition(use_ros2_control),
-        actions=[
-            Node(
-                package='controller_manager',
-                executable='spawner',
-                arguments=['joint_state_broadcaster'],
-                output='screen',
-                parameters=[{'use_sim_time': use_sim_time}] # <--- FIXED: Passed sim time parameter
-            )
-        ]
+        actions=[joint_state_broadcaster_spawner]
     )
 
-    diff_drive_controller = TimerAction(
-        period=10.0,
+    diff_drive_controller = RegisterEventHandler(
         condition=IfCondition(use_ros2_control),
-        actions=[
-            Node(
-                package='controller_manager',
-                executable='spawner',
-                arguments=['diff_drive_controller'],
-                output='screen',
-                parameters=[{'use_sim_time': use_sim_time}] # <--- FIXED: Passed sim time parameter
-            )
-        ]
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[
+                Node(
+                    package='controller_manager',
+                    executable='spawner',
+                    arguments=['diff_drive_controller'],
+                    output='screen',
+                )
+            ]
+        )
     )
 
     # ---------------- BRIDGE ----------------
@@ -147,6 +152,15 @@ def generate_launch_description():
             'config_file': bridge_config,
             'use_sim_time': use_sim_time  # <--- CRITICAL FIX: Forces bridge node to match simulation clock
         }]
+    )
+
+    # ---------------- BNO IMU SIM (bridges /imu/gz → /imu with BNO covariances) ----------------
+    bno_imu_sim = Node(
+        package='my_robot_bringup',
+        executable='bno_imu_sim.py',
+        name='bno_imu_sim',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}]
     )
 
     # ---------------- EKF ----------------
@@ -215,6 +229,55 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
+    # ---------------- SLAM ----------------
+    slam_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('my_robot_slam'),
+                'launch',
+                'slam.launch.py'
+            ])
+        ]),
+        condition=IfCondition(use_slam),
+    )
+
+    # ---------------- NAV2 ----------------
+    nav2_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('nav2_bringup'),
+                'launch',
+                'bringup_launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'map': PathJoinSubstitution([
+                description_pkg,
+                'maps',
+                'industrial-warehouse.yaml'
+            ]),
+            'params_file': PathJoinSubstitution([
+                FindPackageShare('my_robot_navigation'),
+                'config',
+                'nav2_params.yaml'
+            ]),
+            'use_sim_time': use_sim_time,
+        }.items(),
+        condition=IfCondition(use_nav2),
+    )
+
+    # ---------------- DOCK (AprilTag + docking_server) ----------------
+    dock_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('my_robot_navigation'),
+                'launch',
+                'apriltag_dock.launch.py'
+            ])
+        ]),
+        condition=IfCondition(use_dock),
+    )
+
     # ---------------- LAUNCH ARGUMENTS ----------------
     return LaunchDescription([
 
@@ -236,6 +299,24 @@ def generate_launch_description():
             description='Use ROS2 control with controller_manager'
         ),
 
+        DeclareLaunchArgument(
+            'use_nav2',
+            default_value='false',
+            description='Launch Nav2 navigation stack'
+        ),
+
+        DeclareLaunchArgument(
+            'use_slam',
+            default_value='false',
+            description='Launch SLAM toolbox for mapping'
+        ),
+
+        DeclareLaunchArgument(
+            'use_dock',
+            default_value='false',
+            description='Launch AprilTag detection and docking server'
+        ),
+
         # CORE SYSTEM
         gazebo,
         robot_state_publisher,
@@ -248,8 +329,12 @@ def generate_launch_description():
         diff_drive_controller,
 
         # HIGHER LEVEL
+        bno_imu_sim,
         ekf_node,
         rviz_node,
+        slam_bringup,
+        nav2_bringup,
+        dock_bringup,
 
         # INPUT STACK
         joy_node,

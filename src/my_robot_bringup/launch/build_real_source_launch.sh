@@ -14,4 +14,6 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
 source install/setup.bash
 
 # Launch
-ros2 launch my_robot_bringup my_robot_real.launch.py 
+ros2 launch my_robot_bringup my_robot_real.launch.py \
+  serial_port:=/dev/ttyUSB0 \
+  joy_dev:=/dev/input/js0 

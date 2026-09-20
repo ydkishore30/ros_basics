@@ -33,6 +33,10 @@
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
 
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
+#include "sensor_msgs/msg/imu.hpp"
+
 namespace hardware
 {
 class MyHardware : public hardware_interface::SystemInterface
@@ -82,6 +86,17 @@ private:
   std::vector<double> hw_velocities_;
   std::vector<double> hw_efforts_;
   std::vector<double> hw_commands_;
+
+  // Velocity computed from encoder deltas (firmware has no R command)
+  std::vector<double> prev_positions_;
+  rclcpp::Time prev_read_time_{0, 0, RCL_STEADY_TIME};
+
+  // IMU publisher (BNO data comes from same serial port)
+  rclcpp::Node::SharedPtr imu_node_;
+  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+  std::string imu_frame_id_{"imu_link"};
+
+  void publishImuLine(const std::string & line);
 };
 
 }  // namespace hardware

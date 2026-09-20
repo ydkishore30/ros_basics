@@ -35,9 +35,9 @@
   direction: GZ_TO_ROS
 
 # ------------------------------
-# IMU
+# IMU (raw Gazebo → /imu/gz, then bno_imu_sim bridges to /imu)
 # ------------------------------
-- ros_topic_name: '/imu'
+- ros_topic_name: '/imu/gz'
   gz_topic_name: '/imu'
   ros_type_name: 'sensor_msgs/msg/Imu'
   gz_type_name: 'gz.msgs.IMU'

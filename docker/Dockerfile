@@ -28,6 +28,16 @@ RUN apt-get update && apt-get install -y \
 # Note: apt lists are intentionally kept here for the rosdep step below.
 
 # ============================================================
+# 3b. APRILTAG C LIBRARY (built from source — apt package has broken cmake paths)
+# ============================================================
+RUN git clone --depth 1 https://github.com/AprilRobotics/apriltag.git /tmp/apriltag && \
+    cmake -S /tmp/apriltag -B /tmp/apriltag/build -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build /tmp/apriltag/build -j$(nproc) && \
+    cmake --install /tmp/apriltag/build && \
+    ldconfig && \
+    rm -rf /tmp/apriltag
+
+# ============================================================
 # 4. PACKAGE-DECLARED ROS DEPENDENCIES (driven by package.xml)
 # ============================================================
 # gz_ros2_control / ros_gz_bridge / ros_gz_sim are skipped here because they're
@@ -40,7 +50,7 @@ COPY src/ /tmp/ros2_ws/src/
 # unreachable from QEMU arm64 CI runners and the lists were already refreshed above).
 # ament_python is a ROS build type, not an apt package; gcc/g++-multilib are amd64-only.
 RUN rosdep install --from-paths /tmp/ros2_ws/src --ignore-src -r -y \
-    --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite ament_python gcc-multilib g++-multilib" \
+    --skip-keys "gz_ros2_control ros_gz_bridge ros_gz_sim explore_lite ament_python gcc-multilib g++-multilib apriltag_ros apriltag_msgs" \
     && rm -rf /var/lib/apt/lists/* /tmp/ros2_ws
 
 # ============================================================
@@ -78,7 +88,17 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 fi
 
 # ============================================================
-# 7. REINFORCEMENT LEARNING STACK (PC ONLY)
+# 7. PYTHON UTILITIES (all architectures)
+# ============================================================
+RUN pip install --break-system-packages --no-cache-dir \
+    pyserial \
+    langgraph \
+    langchain-ollama \
+    langchain-core \
+    requests
+
+# ============================================================
+# 7b. REINFORCEMENT LEARNING STACK (PC ONLY)
 # ============================================================
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "amd64" ]; then \

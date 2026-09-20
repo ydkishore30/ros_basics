@@ -13,7 +13,7 @@ services:
 
     image: ghcr.io/ydkishore30/ros_basics:pc
     network_mode: host
-    
+
     # Enforces strict NVIDIA scheduling (PC ONLY)
     deploy:
       resources:
@@ -40,14 +40,19 @@ services:
       - ${HOME}/.Xauthority:/root/.Xauthority:rw
       - /dev/bus/usb:/dev/bus/usb:rw
       - /dev/input:/dev/input:rw
+      - /dev:/dev  # Exposes ttyUSB0 / ttyACM0 for BNO IMU and motor controller
       - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
       # Mounts your workspace folder dynamically based on your local .env file
       - ${WORKSPACE_PATH}:/ros2_ws
+      # Persist Gazebo Fuel model cache so models aren't re-downloaded every run
+      - gz_fuel_cache:/root/.gz/fuel
 
     devices:
       - /dev/dri:/dev/dri
       - /dev/input:/dev/input
       - /dev/bus/usb:/dev/bus/usb
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyACM0:/dev/ttyACM0
 
     privileged: true
     tty: true
@@ -62,12 +67,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      
+
     image: ghcr.io/ydkishore30/ros_basics:pi
     restart: unless-stopped
 
     network_mode: host
-    
+
     # Notice: The deploy block is entirely removed here to prevent Pi crashes
         # 🟢 ADD THIS LINE HERE: Forces Docker to expect the emulated architecture
     platform: linux/arm64
@@ -80,15 +85,23 @@ services:
       - GAZEBO_MODEL_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GAZEBO_MODEL_PATH}
       - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/my_robot_description/worlds/sample_blender:${GZ_SIM_RESOURCE_PATH}
 
-    volumes: *shared-volumes  # Automatically mirrors the exact volumes used above
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+      - /dev/input:/dev/input:rw
+      - /opt/ros/jazzy/share/slam_toolbox/config/:/opt/ros/jazzy/share/slam_toolbox/config/
+      - ${WORKSPACE_PATH}:/ros2_ws
+      - /dev:/dev  # Exposes ttyUSB0 / ttyACM0 and all other serial devices
 
     devices:
-      - /dev/dri:/dev/dri          # Direct hardware acceleration for VideoCore GPU
-      - /dev/vchiq:/dev/vchiq      # Pi low-level multimedia channel
-      - /dev/input:/dev/input      # Keyboards / Controllers / Joysticks
-      - /dev/bus/usb:/dev/bus/usb  # USB Devices
-      - /dev:/dev:rw               # Dynamic USB Serial Hotplug monitor (ttyUSB0 / ttyACM0)
+      - /dev/dri:/dev/dri
+      - /dev/vchiq:/dev/vchiq
+      - /dev/input:/dev/input
+      - /dev/bus/usb:/dev/bus/usb
 
     privileged: true
     tty: true
     stdin_open: true
+
+volumes:
+  gz_fuel_cache:

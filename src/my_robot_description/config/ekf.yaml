@@ -1,25 +1,35 @@
 ekf_filter_node:
   ros__parameters:
-    frequency: 30.0
+    frequency: 50.0
     two_d_mode: true
     publish_tf: true
 
     odom0: /diff_drive_controller/odom
 
-    odom0_config: [true, true, false,
+    # x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az
+    odom0_config: [true,  true,  false,
                    false, false, true,
-                   true, true, false,
+                   true,  true,  false,
                    false, false, true,
                    false, false, false]
 
     imu0: /imu
 
+    # BNO provides: yaw (orientation z), angular velocity z
+    # In 2D mode: fuse yaw orientation + yaw rate from IMU
+    # Do NOT fuse roll/pitch in 2D mode (they conflict with two_d_mode constraint)
     imu0_config: [false, false, false,
                   false, false, true,
                   false, false, false,
                   false, false, true,
                   false, false, false]
 
+    imu0_differential: false
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: false
+
     world_frame: odom
     odom_frame: odom
     base_link_frame: base_footprint
+
+    print_diagnostics: true

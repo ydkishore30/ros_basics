@@ -27,6 +27,7 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 namespace hardware
 {
@@ -132,13 +133,25 @@ hardware_interface::CallbackReturn MyHardware::on_configure(
     return hardware_interface::CallbackReturn::ERROR;
   }
 
+  // Create a minimal node for IMU publishing (BNO data on same serial port)
+  if (!imu_node_) {
+    rclcpp::NodeOptions opts;
+    opts.automatically_declare_parameters_from_overrides(true);
+    imu_node_ = std::make_shared<rclcpp::Node>("bno_imu_hw_publisher", opts);
+    imu_pub_ = imu_node_->create_publisher<sensor_msgs::msg::Imu>("/imu", 10);
+    RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "IMU publisher created on /imu");
+  }
+
   // Reset joint state and command values
+  prev_positions_.resize(hw_positions_.size(), 0.0);
   for (size_t i = 0; i < hw_positions_.size(); ++i) {
     hw_positions_[i] = 0.0;
     hw_velocities_[i] = 0.0;
     hw_efforts_[i] = 0.0;
     hw_commands_[i] = 0.0;
+    prev_positions_[i] = 0.0;
   }
+  prev_read_time_ = rclcpp::Clock(RCL_STEADY_TIME).now();
 
   RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "MyHardware configured successfully");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -222,7 +235,7 @@ static bool waitForSerial(int fd, int timeout_ms)
 }
 
 hardware_interface::return_type MyHardware::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   if (!serial_port_ || !serial_port_->is_open()) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Serial port not available");
@@ -235,51 +248,47 @@ hardware_interface::return_type MyHardware::read(
     const int fd = serial_port_->native_handle();
 
     // ── Encoder counts → position ────────────────────────────────────────────
-    // Protocol: send "E\n", firmware replies "E <left_count> <right_count>\n"
+    // Firmware: "E\n" → "E <left_count> <right_count>\n"
+    // Also streams "I ..." (IMU) and "C ..." (motor cmd ack) — skip those.
     boost::asio::write(*serial_port_, boost::asio::buffer(std::string("E\n")));
-    if (waitForSerial(fd, 500)) {
+    bool got_e = false;
+    for (int attempt = 0; attempt < 8 && !got_e; ++attempt) {
+      if (!waitForSerial(fd, 8)) break;
       boost::asio::streambuf buf;
       boost::asio::read_until(*serial_port_, buf, '\n', ec);
-      if (!ec) {
-        std::istream is(&buf);
-        std::string line;
-        std::getline(is, line);
-        if (line.size() >= 2 && line[0] == 'E') {
-          std::istringstream ss(line.substr(2));
-          long left_count = 0, right_count = 0;
-          if (ss >> left_count >> right_count) {
-            hw_positions_[0] = static_cast<double>(left_count)  * rad_per_count;
-            hw_positions_[1] = static_cast<double>(right_count) * rad_per_count;
-          }
+      if (ec) break;
+      std::istream is(&buf);
+      std::string line;
+      std::getline(is, line);
+      if (!line.empty() && line[0] == 'I') {
+        publishImuLine(line);
+      } else if (line.size() >= 2 && line[0] == 'E') {
+        std::istringstream ss(line.substr(2));
+        long left_count = 0, right_count = 0;
+        if (ss >> left_count >> right_count) {
+          hw_positions_[0] = static_cast<double>(left_count)  * rad_per_count;
+          hw_positions_[1] = static_cast<double>(right_count) * rad_per_count;
         }
+        got_e = true;
       }
-    } else {
+      // 'C' lines are motor command acks — discard silently
+    }
+    if (!got_e) {
       RCLCPP_WARN(rclcpp::get_logger("MyHardware"), "Encoder read timed out (E cmd)");
     }
 
-    // ── Wheel RPM → velocity ─────────────────────────────────────────────────
-    // Protocol: send "R\n", firmware replies "R <left_rpm> <right_rpm>\n"
-    boost::asio::write(*serial_port_, boost::asio::buffer(std::string("R\n")));
-    if (waitForSerial(fd, 500)) {
-      boost::asio::streambuf buf;
-      boost::asio::read_until(*serial_port_, buf, '\n', ec);
-      if (!ec) {
-        std::istream is(&buf);
-        std::string line;
-        std::getline(is, line);
-        if (line.size() >= 2 && line[0] == 'R') {
-          std::istringstream ss(line.substr(2));
-          float left_rpm = 0.0f, right_rpm = 0.0f;
-          if (ss >> left_rpm >> right_rpm) {
-            // RPM → rad/s
-            hw_velocities_[0] = static_cast<double>(left_rpm)  * 2.0 * M_PI / 60.0;
-            hw_velocities_[1] = static_cast<double>(right_rpm) * 2.0 * M_PI / 60.0;
-          }
-        }
+    // ── Velocity from encoder position delta ─────────────────────────────────
+    // Firmware has no R command — derive velocity from position change over dt.
+    const double dt = (time - prev_read_time_).seconds();
+    if (dt > 0.0 && dt < 1.0) {
+      for (size_t i = 0; i < hw_velocities_.size(); ++i) {
+        hw_velocities_[i] = (hw_positions_[i] - prev_positions_[i]) / dt;
       }
-    } else {
-      RCLCPP_WARN(rclcpp::get_logger("MyHardware"), "RPM read timed out (R cmd)");
     }
+    for (size_t i = 0; i < hw_positions_.size(); ++i) {
+      prev_positions_[i] = hw_positions_[i];
+    }
+    prev_read_time_ = time;
 
     hw_efforts_[0] = hw_velocities_[0] * 0.1;
     hw_efforts_[1] = hw_velocities_[1] * 0.1;
@@ -320,6 +329,38 @@ hardware_interface::return_type MyHardware::write(
   }
 
   return hardware_interface::return_type::OK;
+}
+
+void MyHardware::publishImuLine(const std::string & line)
+{
+  if (!imu_pub_) return;
+
+  // Format: "I qx qy qz gx gy gz"
+  std::istringstream ss(line.substr(2));
+  float qx, qy, qz, gx, gy, gz;
+  if (!(ss >> qx >> qy >> qz >> gx >> gy >> gz)) return;
+
+  const float norm_sq = qx*qx + qy*qy + qz*qz;
+  const float qw = std::sqrt(std::max(0.0f, 1.0f - norm_sq));
+
+  sensor_msgs::msg::Imu msg;
+  msg.header.stamp = rclcpp::Clock().now();
+  msg.header.frame_id = imu_frame_id_;
+
+  msg.orientation.x = qx;
+  msg.orientation.y = qy;
+  msg.orientation.z = qz;
+  msg.orientation.w = qw;
+
+  msg.angular_velocity.x = gx;
+  msg.angular_velocity.y = gy;
+  msg.angular_velocity.z = gz;
+
+  msg.orientation_covariance      = {0.01,0,0, 0,0.01,0, 0,0,0.01};
+  msg.angular_velocity_covariance = {0.001,0,0, 0,0.001,0, 0,0,0.001};
+  msg.linear_acceleration_covariance[0] = -1.0;  // not provided
+
+  imu_pub_->publish(msg);
 }
 
 }  // namespace hardware
