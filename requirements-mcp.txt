@@ -1,0 +1,7 @@
+# Host-side deps for ros2_mcp_server.py / ros2_agent.py
+# mcp<2: langchain-mcp-adapters does not support the mcp 2.x API yet
+mcp[cli]<2
+langchain-mcp-adapters
+langchain-ollama
+langgraph
+requests
