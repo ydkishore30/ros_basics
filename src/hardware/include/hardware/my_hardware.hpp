@@ -89,14 +89,37 @@ private:
 
   // Velocity computed from encoder deltas (firmware has no R command)
   std::vector<double> prev_positions_;
+
+  // Per-wheel velocity PID (feed-forward + PI + D on measurement), output in [-1, 1]
+  bool use_pid_{true};
+  double pid_offset_{0.0}; // output needed to overcome motor dead zone / static friction
+  double pid_kff_{0.1};    // output per rad/s of target above the dead zone
+  double pid_kp_{0.05};    // output per rad/s of error
+  double pid_ki_{0.2};     // output per (rad/s * s) of accumulated error
+  double pid_kd_{0.0};     // output per rad/s^2 of filtered velocity change
+  double pid_i_band_{0.5}; // integrate only when |error| < band * |target| (integral separation)
+  double vel_filter_alpha_{0.3};  // EMA weight of the newest velocity sample
+  bool encoder_ok_{false};        // last read() got a fresh encoder reply
+  std::vector<double> vel_filtered_;
+  std::vector<double> prev_vel_filtered_;
+  std::vector<double> pid_integral_;
+  std::vector<double> prev_targets_;
   rclcpp::Time prev_read_time_{0, 0, RCL_STEADY_TIME};
+
+  // Persistent serial receive buffer: read_until may pull in several lines at
+  // once, and bytes past the first '\n' must survive to the next read.
+  boost::asio::streambuf serial_buf_;
 
   // IMU publisher (BNO data comes from same serial port)
   rclcpp::Node::SharedPtr imu_node_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
   std::string imu_frame_id_{"imu_link"};
+  uint32_t imu_poll_counter_{0};
+  double imu_yaw_{0.0};
+  bool have_imu_yaw_{false};
 
   void publishImuLine(const std::string & line);
+  void updateOrientation(const std::string & line);
 };
 
 }  // namespace hardware

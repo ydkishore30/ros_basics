@@ -2,9 +2,7 @@ controller_manager:
   ros__parameters:
     update_rate: 50
     use_sim_time: false
-    hardware_synchronization:
-      expect_blocking_read_write: true
-    
+
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
@@ -18,7 +16,7 @@ diff_drive_controller:
     right_wheel_names: ['base_to_right_wheel']
 
     # 2. Critical Kinematics Fixes (Calculated from URDF tree data)
-    wheel_separation: 0.35
+    wheel_separation: 0.349   # calibrated from IMU in 1 m square tests (was 0.343, turns over-counted ~1.7%)
     wheel_radius: 0.04
     wheel_separation_multiplier: 1.0
     odom_frame_id: 'odom'
@@ -46,5 +44,5 @@ diff_drive_controller:
     angular.z.has_acceleration_limits: true
     angular.z.max_velocity: 1.0
     angular.z.min_velocity: -1.0
-    angular.z.max_acceleration: 0.5
-    angular.z.min_acceleration: -0.5
+    angular.z.max_acceleration: 2.0   # was 0.5 - robot kept spinning ~2 s after stick release
+    angular.z.min_acceleration: -2.0

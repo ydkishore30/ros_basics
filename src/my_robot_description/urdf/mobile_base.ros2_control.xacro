@@ -27,9 +27,19 @@
           <plugin>hardware/MyHardware</plugin>
           <param name='serial_port'>$(arg serial_port)</param>
           <param name='baud_rate'>115200</param>
-          <param name='counts_per_rev'>2520.0</param>
-          <param name='wheel_radius'>0.035</param>
-          <param name='wheel_base'>0.34</param>
+          <param name='counts_per_rev'>1260.0</param>
+          <param name='wheel_radius'>0.04</param>
+          <param name='wheel_base'>0.35</param>
+          <!-- Per-wheel velocity PID (my_hardware.cpp write()); false = open-loop PWM -->
+          <param name='use_pid'>true</param>
+          <!-- Feed-forward from open-loop sweep (wheels lifted) - about 11.5 rad/s per unit output, no dead zone. No colons in comments here, the launch parses the URDF as YAML -->
+          <param name='pid_offset'>0.0</param>
+          <param name='pid_kff'>0.087</param>
+          <param name='pid_kp'>0.05</param>
+          <param name='pid_ki'>0.1</param>
+          <param name='pid_kd'>0.0</param>
+          <param name='pid_i_band'>0.5</param>
+          <param name='vel_filter_alpha'>0.3</param>
         </xacro:unless>
       </xacro:unless>
     </hardware>

@@ -26,6 +26,10 @@
   <joint name='lidar_joint' type='fixed'>
     <parent link='base_link'/>
     <child link='lidar_link'/>
+    <!-- Yaw 0 - the X2's 0 degree mark faces the robot front. Was pi until 2026-10-01
+         (measured 2026-09-29); re-measured 2026-10-01 - reversing 0.07 m made the
+         0 degree range grow, so the lidar has been turned round since. With the
+         wrong yaw every straight move contradicts odometry and SLAM smears the map. -->
     <origin xyz='0 0 ${base_height + lidar_height/2}' rpy='0 0 0'/>
   </joint>
 

@@ -14,6 +14,8 @@
 
 #include "hardware/my_hardware.hpp"
 
+#include <algorithm>
+
 #include <chrono>
 #include <cmath>
 #include <limits>
@@ -70,6 +72,26 @@ hardware_interface::CallbackReturn MyHardware::on_init(
   RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Serial port: %s, Baud rate: %d, Counts per rev: %.1f, Wheel radius: %.3f",
               serial_port_name_.c_str(), baud_rate_, counts_per_rev_, wheel_radius_);
 
+  // Optional velocity PID parameters (see write())
+  auto param = [this](const std::string & name, double def) {
+    auto it = info_.hardware_parameters.find(name);
+    return it != info_.hardware_parameters.end() ? std::stod(it->second) : def;
+  };
+  if (info_.hardware_parameters.count("use_pid")) {
+    use_pid_ = info_.hardware_parameters.at("use_pid") == "true";
+  }
+  pid_offset_ = param("pid_offset", pid_offset_);
+  pid_kff_ = param("pid_kff", pid_kff_);
+  pid_kp_ = param("pid_kp", pid_kp_);
+  pid_ki_ = param("pid_ki", pid_ki_);
+  pid_kd_ = param("pid_kd", pid_kd_);
+  pid_i_band_ = param("pid_i_band", pid_i_band_);
+  vel_filter_alpha_ = std::clamp(param("vel_filter_alpha", vel_filter_alpha_), 0.01, 1.0);
+
+  RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Velocity PID %s: offset=%.3f kff=%.3f kp=%.3f ki=%.3f kd=%.3f i_band=%.2f alpha=%.2f",
+              use_pid_ ? "ENABLED" : "disabled (open-loop)", pid_offset_, pid_kff_, pid_kp_, pid_ki_, pid_kd_, pid_i_band_,
+              vel_filter_alpha_);
+
   // Get joint names from hardware info
   auto joint_names = info_.joints;
   if (joint_names.size() != 2) {
@@ -98,6 +120,10 @@ hardware_interface::CallbackReturn MyHardware::on_init(
   hw_velocities_.resize(joint_names.size(), std::numeric_limits<double>::quiet_NaN());
   hw_efforts_.resize(joint_names.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(joint_names.size(), std::numeric_limits<double>::quiet_NaN());
+  vel_filtered_.resize(joint_names.size(), 0.0);
+  prev_vel_filtered_.resize(joint_names.size(), 0.0);
+  pid_integral_.resize(joint_names.size(), 0.0);
+  prev_targets_.resize(joint_names.size(), 0.0);
 
   RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "MyHardware initialized successfully");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -127,6 +153,7 @@ hardware_interface::CallbackReturn MyHardware::on_configure(
     // Discard any garbage the ESP32 sent during boot
     int fd = serial_port_->native_handle();
     ::tcflush(fd, TCIOFLUSH);
+    serial_buf_.consume(serial_buf_.size());
 
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Failed to open serial port: %s", e.what());
@@ -196,6 +223,10 @@ hardware_interface::CallbackReturn MyHardware::on_activate(
     hw_velocities_[i] = 0.0;
     hw_efforts_[i] = 0.0;
     hw_commands_[i] = 0.0;
+    vel_filtered_[i] = 0.0;
+    prev_vel_filtered_[i] = 0.0;
+    pid_integral_[i] = 0.0;
+    prev_targets_[i] = 0.0;
   }
 
   RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "MyHardware activated successfully");
@@ -212,8 +243,14 @@ hardware_interface::CallbackReturn MyHardware::on_deactivate(
     hw_commands_[i] = 0.0;
   }
 
-  // Close serial port
+  // Send an explicit stop before closing: the firmware has no command
+  // timeout and keeps driving at the last received speed otherwise.
   if (serial_port_ && serial_port_->is_open()) {
+    boost::system::error_code ec;
+    boost::asio::write(*serial_port_, boost::asio::buffer(std::string("0 0\n")), ec);
+    if (ec) {
+      RCLCPP_WARN(rclcpp::get_logger("MyHardware"), "Failed to send stop command: %s", ec.message().c_str());
+    }
     serial_port_->close();
     RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Serial port closed");
   }
@@ -248,20 +285,34 @@ hardware_interface::return_type MyHardware::read(
     const int fd = serial_port_->native_handle();
 
     // ── Encoder counts → position ────────────────────────────────────────────
-    // Firmware: "E\n" → "E <left_count> <right_count>\n"
-    // Also streams "I ..." (IMU) and "C ..." (motor cmd ack) — skip those.
-    boost::asio::write(*serial_port_, boost::asio::buffer(std::string("E\n")));
+    // Firmware is request/response:
+    //   "E\n" → "E <left_count> <right_count>"
+    //   "I\n" → "I <ax> <ay> <az> [g] <gx> <gy> <gz> [deg/s]"
+    //   "O\n" → "O <heading> <roll> <pitch> [deg, heading clockwise]"
+    // E goes first so its reply is fast; the slower BNO055 replies (~5-10 ms)
+    // stay in serial_buf_ and are parsed at the start of the next cycle.
+    std::string request = "E\n";
+    if (++imu_poll_counter_ % 2 == 0) {
+      request += "I\nO\n";  // IMU at half the control rate
+    }
+    boost::asio::write(*serial_port_, boost::asio::buffer(request));
     bool got_e = false;
-    for (int attempt = 0; attempt < 8 && !got_e; ++attempt) {
-      if (!waitForSerial(fd, 8)) break;
-      boost::asio::streambuf buf;
-      boost::asio::read_until(*serial_port_, buf, '\n', ec);
+    for (int attempt = 0; attempt < 16 && !got_e; ++attempt) {
+      // Only wait on the port when no complete line is already buffered
+      const auto data = serial_buf_.data();
+      const bool have_line = std::find(boost::asio::buffers_begin(data),
+                                       boost::asio::buffers_end(data), '\n') !=
+                             boost::asio::buffers_end(data);
+      if (!have_line && !waitForSerial(fd, 8)) break;
+      boost::asio::read_until(*serial_port_, serial_buf_, '\n', ec);
       if (ec) break;
-      std::istream is(&buf);
+      std::istream is(&serial_buf_);
       std::string line;
       std::getline(is, line);
       if (!line.empty() && line[0] == 'I') {
         publishImuLine(line);
+      } else if (!line.empty() && line[0] == 'O') {
+        updateOrientation(line);
       } else if (line.size() >= 2 && line[0] == 'E') {
         std::istringstream ss(line.substr(2));
         long left_count = 0, right_count = 0;
@@ -279,16 +330,32 @@ hardware_interface::return_type MyHardware::read(
 
     // ── Velocity from encoder position delta ─────────────────────────────────
     // Firmware has no R command — derive velocity from position change over dt.
-    const double dt = (time - prev_read_time_).seconds();
-    if (dt > 0.0 && dt < 1.0) {
-      for (size_t i = 0; i < hw_velocities_.size(); ++i) {
-        hw_velocities_[i] = (hw_positions_[i] - prev_positions_[i]) / dt;
+    // Measure only between two real E replies: after a dropout the first reply
+    // carries the whole gap's movement, so dt must span the gap too, or the
+    // velocity spikes (65x for a 1.3 s gap) and the PID slams the motors.
+    // Without a reply, keep the last velocity instead of reporting 0.
+    encoder_ok_ = got_e;
+    if (got_e) {
+      const double dt = (time - prev_read_time_).seconds();
+      if (dt > 0.0 && dt < 2.0) {
+        for (size_t i = 0; i < hw_velocities_.size(); ++i) {
+          hw_velocities_[i] = (hw_positions_[i] - prev_positions_[i]) / dt;
+        }
+      }
+      for (size_t i = 0; i < hw_positions_.size(); ++i) {
+        prev_positions_[i] = hw_positions_[i];
+      }
+      prev_read_time_ = time;
+    }
+
+    // Smoothed velocity for the PID: a 20 ms delta is only a few encoder
+    // counts, so the raw value jumps by ~20% per count. Only fresh replies
+    // update it.
+    if (got_e) {
+      for (size_t i = 0; i < vel_filtered_.size(); ++i) {
+        vel_filtered_[i] += vel_filter_alpha_ * (hw_velocities_[i] - vel_filtered_[i]);
       }
     }
-    for (size_t i = 0; i < hw_positions_.size(); ++i) {
-      prev_positions_[i] = hw_positions_[i];
-    }
-    prev_read_time_ = time;
 
     hw_efforts_[0] = hw_velocities_[0] * 0.1;
     hw_efforts_[1] = hw_velocities_[1] * 0.1;
@@ -302,7 +369,7 @@ hardware_interface::return_type MyHardware::read(
 }
 
 hardware_interface::return_type MyHardware::write(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (!serial_port_ || !serial_port_->is_open()) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Serial port not available");
@@ -310,10 +377,49 @@ hardware_interface::return_type MyHardware::write(
   }
 
   try {
-    // Scale rad/s → [-1, 1]: max wheel speed = 0.35 m/s / 0.035 m = 10 rad/s
-    constexpr double MAX_RAD_S = 10.0;
-    double left_scaled  = std::max(-1.0, std::min(1.0, hw_commands_[0] / MAX_RAD_S));
-    double right_scaled = std::max(-1.0, std::min(1.0, hw_commands_[1] / MAX_RAD_S));
+    // Wheel velocity target (rad/s) → motor output in [-1, 1].
+    // Open-loop: output = offset + kff * target (offset covers the motors' dead
+    // zone, signed with the target). The motors don't respond equally to
+    // the same PWM, so with use_pid each wheel also gets a PI correction from
+    // its encoder, which keeps the robot straight and at the commanded speed.
+    const double dt = period.seconds();
+    double out[2];
+    for (size_t i = 0; i < 2; ++i) {
+      const double target = std::isfinite(hw_commands_[i]) ? hw_commands_[i] : 0.0;
+      double u = std::abs(target) < 1e-3 ? 0.0 : std::copysign(pid_offset_, target) + pid_kff_ * target;
+
+      if (use_pid_) {
+        // Stopped or reversing: drop the accumulated correction so the wheel
+        // stops dead instead of creeping on leftover integral.
+        if (std::abs(target) < 1e-3 || target * prev_targets_[i] < 0.0) {
+          pid_integral_[i] = 0.0;
+        }
+        const double error = target - vel_filtered_[i];
+        const double d_meas = dt > 0.0 ? (vel_filtered_[i] - prev_vel_filtered_[i]) / dt : 0.0;
+        const double u_no_i = u + pid_kp_ * error - pid_kd_ * d_meas;
+
+        // Anti-windup: integrate only with fresh encoder data, and not while
+        // the output is saturated in the direction the error would push it.
+        const double u_try = u_no_i + pid_ki_ * pid_integral_[i];
+        const bool saturated = (u_try >= 1.0 && error > 0.0) || (u_try <= -1.0 && error < 0.0);
+        // Integral separation: while the wheel is still far from the target
+        // (spin-up after a step), let feed-forward do the work — integrating
+        // that transient error is what causes overshoot.
+        const bool near_target = std::abs(error) < pid_i_band_ * std::abs(target) + 0.2;
+        if (encoder_ok_ && !saturated && near_target && dt > 0.0 && dt < 0.5 &&
+            std::abs(target) >= 1e-3)
+        {
+          pid_integral_[i] += error * dt;
+        }
+        u = std::abs(target) < 1e-3 ? 0.0 : u_no_i + pid_ki_ * pid_integral_[i];
+      }
+
+      out[i] = std::clamp(u, -1.0, 1.0);
+      prev_targets_[i] = target;
+      prev_vel_filtered_[i] = vel_filtered_[i];
+    }
+    const double left_scaled = out[0];
+    const double right_scaled = out[1];
 
     // Protocol: "<left> <right>\n"  (space-separated, [-1,1])
     std::string command = std::to_string(left_scaled) + " " +
@@ -321,7 +427,7 @@ hardware_interface::return_type MyHardware::write(
 
     boost::asio::write(*serial_port_, boost::asio::buffer(command));
 
-    RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Sent to Arduino: %s", command.c_str());
+    // RCLCPP_INFO(rclcpp::get_logger("MyHardware"), "Sent to Arduino: %s", command.c_str());
 
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("MyHardware"), "Error writing to serial port: %s", e.what());
@@ -335,32 +441,60 @@ void MyHardware::publishImuLine(const std::string & line)
 {
   if (!imu_pub_) return;
 
-  // Format: "I qx qy qz gx gy gz"
+  // Format: "I ax ay az gx gy gz" — accel in g, gyro in deg/s (BNO055 raw units).
+  // Verified on hardware: gz is positive for a CCW (left) turn.
   std::istringstream ss(line.substr(2));
-  float qx, qy, qz, gx, gy, gz;
-  if (!(ss >> qx >> qy >> qz >> gx >> gy >> gz)) return;
+  double ax, ay, az, gx, gy, gz;
+  if (!(ss >> ax >> ay >> az >> gx >> gy >> gz)) return;
 
-  const float norm_sq = qx*qx + qy*qy + qz*qz;
-  const float qw = std::sqrt(std::max(0.0f, 1.0f - norm_sq));
+  constexpr double G = 9.80665;
+  constexpr double DEG2RAD = M_PI / 180.0;
+
+  // Roll/pitch from the gravity vector (REP-145: +g along +z at rest),
+  // yaw from the last "O" heading.
+  const double roll  = std::atan2(ay, az);
+  const double pitch = std::atan2(-ax, std::sqrt(ay*ay + az*az));
+  const double yaw   = imu_yaw_;
+  const double cr = std::cos(roll/2),  sr = std::sin(roll/2);
+  const double cp = std::cos(pitch/2), sp = std::sin(pitch/2);
+  const double cy = std::cos(yaw/2),   sy = std::sin(yaw/2);
 
   sensor_msgs::msg::Imu msg;
   msg.header.stamp = rclcpp::Clock().now();
   msg.header.frame_id = imu_frame_id_;
 
-  msg.orientation.x = qx;
-  msg.orientation.y = qy;
-  msg.orientation.z = qz;
-  msg.orientation.w = qw;
+  msg.orientation.w = cr*cp*cy + sr*sp*sy;
+  msg.orientation.x = sr*cp*cy - cr*sp*sy;
+  msg.orientation.y = cr*sp*cy + sr*cp*sy;
+  msg.orientation.z = cr*cp*sy - sr*sp*cy;
 
-  msg.angular_velocity.x = gx;
-  msg.angular_velocity.y = gy;
-  msg.angular_velocity.z = gz;
+  msg.angular_velocity.x = gx * DEG2RAD;
+  msg.angular_velocity.y = gy * DEG2RAD;
+  msg.angular_velocity.z = gz * DEG2RAD;
+
+  msg.linear_acceleration.x = ax * G;
+  msg.linear_acceleration.y = ay * G;
+  msg.linear_acceleration.z = az * G;
 
   msg.orientation_covariance      = {0.01,0,0, 0,0.01,0, 0,0,0.01};
   msg.angular_velocity_covariance = {0.001,0,0, 0,0.001,0, 0,0,0.001};
-  msg.linear_acceleration_covariance[0] = -1.0;  // not provided
+  msg.linear_acceleration_covariance = {0.01,0,0, 0,0.01,0, 0,0,0.01};
+  if (!have_imu_yaw_) {
+    msg.orientation_covariance[0] = -1.0;  // no heading received yet
+  }
 
   imu_pub_->publish(msg);
+}
+
+void MyHardware::updateOrientation(const std::string & line)
+{
+  // Format: "O heading roll pitch" in degrees. BNO055 heading increases
+  // clockwise (verified on hardware); ROS yaw is CCW-positive.
+  std::istringstream ss(line.substr(2));
+  double heading;
+  if (!(ss >> heading)) return;
+  imu_yaw_ = std::remainder(-heading * M_PI / 180.0, 2.0 * M_PI);
+  have_imu_yaw_ = true;
 }
 
 }  // namespace hardware

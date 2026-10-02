@@ -29,6 +29,7 @@ import warnings
 import requests
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
 
@@ -45,18 +46,25 @@ Robot facts:
 - Dock station (home_dock) is at map position (2.5, 0.0)
 - AprilTag marker faces the robot at that position
 
-IMPORTANT intent mapping — always call sim_stop when the user says any of:
-"stop", "stop sim", "stop all sim", "stop simulation", "shut down", "bring down",
-"bring down sim", "kill", "kill sim", "kill all", "kill all nodes", "kill nodes",
-"kill everything", "exit sim", "close", "terminate", "bring the launch file down",
-"stop the launch", "down all", "stop all", "halt", "sim_stop".
+Motion — use these tools, never ros2_cmd / 'topic pub' for driving:
+- "rotate/turn left|right [N degrees]" → rotate(direction, angle_deg). Default 90°.
+- "move/go forward|back [N meters]" → move(distance_m); backward = negative.
+- "stop", "halt", "stop moving", "stop rotating", "brake" → stop_robot.
+
+IMPORTANT intent mapping — call sim_stop ONLY when the user explicitly names the
+simulation, containers, nodes, or launch, e.g.: "stop sim", "stop all sim",
+"stop simulation", "shut down", "bring down sim", "kill sim", "kill all",
+"kill all nodes", "kill nodes", "kill everything", "exit sim", "terminate",
+"bring the launch file down", "stop the launch", "down all", "sim_stop".
 Do NOT call node_list for "kill all nodes" — that means stop everything, use sim_stop.
+A bare "stop" or "halt" means stop_robot, never sim_stop.
 
 Always call sim_start when the user says any of:
 "start", "launch", "bring up", "run", "open", "spin up".
 
 When asked to do something, pick the right tool and call it.
-Report what happened after each tool call.
+Report what happened after each tool call, using only what the tool returned —
+never invent nodes, topics, or positions.
 If a command fails, explain why and suggest a fix."""
 
 
@@ -74,8 +82,14 @@ def mcp_connection(mcp_url: str | None) -> dict:
 
 async def run_agent(model: str, ollama_url: str, mcp_url: str | None):
     client = MultiServerMCPClient({"ros2": mcp_connection(mcp_url)})
-    tools = await client.get_tools()
+    # One persistent session: without it every tool call would spawn a new
+    # server process (stdio) or open a new HTTP session, adding seconds per call.
+    async with client.session("ros2") as session:
+        tools = await load_mcp_tools(session)
+        await chat_loop(tools, model, ollama_url, mcp_url)
 
+
+async def chat_loop(tools, model: str, ollama_url: str, mcp_url: str | None):
     print(f"\n ROS2 Agent  (model: {model} @ {ollama_url}, powered by LangGraph)")
     print(f" MCP server: {mcp_url or 'ros2_mcp_server.py (stdio)'}")
     print(f" Tools: {', '.join(t.name for t in tools)}")

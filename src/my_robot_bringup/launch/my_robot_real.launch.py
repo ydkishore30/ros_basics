@@ -189,12 +189,31 @@ def generate_launch_description():
     )
 
     # ------------------------------
+    # YDLidar X2 → /scan (frame lidar_link)
+    # ------------------------------
+    lidar_node = Node(
+        package='ydlidar_ros2_driver',
+        executable='ydlidar_ros2_driver_node',
+        name='ydlidar_ros2_driver_node',
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('use_lidar')),
+        parameters=[
+            PathJoinSubstitution([
+                FindPackageShare('my_robot_bringup'), 'config', 'ydlidar_x2.yaml',
+            ]),
+            {'port': LaunchConfiguration('lidar_port')},
+        ],
+    )
+
+    # ------------------------------
     # Launch description
     # ------------------------------
     return LaunchDescription([
         DeclareLaunchArgument(
             'serial_port',
-            default_value='/dev/ttyUSB0',
+            # Fixed USB-port path: ESP32 and X2 both use a CP2102, so ttyUSB0/1
+            # can swap between boots. ESP32 must stay in Pi USB port 1.3.
+            default_value='/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.3:1.0-port0',
             description='Serial port for motor controller + BNO IMU (Arduino/ESP32)'
         ),
         DeclareLaunchArgument(
@@ -208,6 +227,17 @@ def generate_launch_description():
             description='Deprecated — BNO IMU is now published by the hardware interface directly'
         ),
         DeclareLaunchArgument(
+            'use_lidar',
+            default_value='false',  # temporarily off; enable with use_lidar:=true
+            description='Start the YDLidar X2 driver (publishes /scan)'
+        ),
+        DeclareLaunchArgument(
+            'lidar_port',
+            # Fixed USB-port path — YDLidar X2 must stay in Pi USB port 1.2.
+            default_value='/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0',
+            description='Serial port for YDLidar X2 (must be DIFFERENT from serial_port)'
+        ),
+        DeclareLaunchArgument(
             'joy_dev',
             default_value='/dev/input/event0',
             description='Joystick device path (check with: ls /dev/input/by-id/)'
@@ -217,6 +247,7 @@ def generate_launch_description():
         joint_state_after_controller,
         diff_drive_after_joint,
         bno_imu_node,
+        lidar_node,
         ekf_node,
         joy_node,
         teleop_node,

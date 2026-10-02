@@ -12,15 +12,18 @@ teleop_twist_joy_node:
     scale_linear:
       x: 0.3        # max forward speed m/s
     scale_angular:
-      yaw: 1.5      # max turn rate rad/s
+      yaw: 0.6      # max turn rate rad/s (slow turns keep SLAM scans sharp)
 
     scale_linear_turbo:
       x: 0.5
     scale_angular_turbo:
-      yaw: 2.0
+      yaw: 1.0      # controller caps at 1.0 rad/s anyway
 
-    require_enable_button: false
-    enable_button: 5        # LB — hold to enable (unused when require_enable_button: false)
-    enable_turbo_button: 5  # LB — hold for turbo
+    # Must stay true: with false the node publishes a zero Twist on every /joy message
+    # (~20 Hz) even with the sticks untouched, which interleaves with Nav2's commands on
+    # /cmd_vel and makes the robot stop-and-go (measured 2026-10-02: 46% of commands were zeros).
+    require_enable_button: true
+    enable_button: 5        # LB — hold to drive with the joystick
+    enable_turbo_button: -1 # disabled: it shared button 5 with enable, which would make every joystick move a turbo move
 
     deadzone: 0.1

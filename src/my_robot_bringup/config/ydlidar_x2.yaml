@@ -1,0 +1,28 @@
+# YDLidar X2 (triangle, single-channel, 115200 baud).
+# Values from ydlidar_ros2_driver/params/X2.yaml; frame_id matches lidar_link
+# in my_robot_description/urdf/lidar.xacro. The port is set from the launch
+# file (lidar_port) because the X2 and the ESP32 both use a CP2102 adapter.
+ydlidar_ros2_driver_node:
+  ros__parameters:
+    frame_id: lidar_link
+    ignore_array: ""
+    baudrate: 115200
+    lidar_type: 1
+    device_type: 0
+    sample_rate: 3
+    abnormal_check_count: 4
+    fixed_resolution: true
+    reversion: false
+    inverted: true      # X2 spins clockwise - false mirrors the scan (measured: robot +45 deg, scan -44 deg), which broke SLAM on every turn
+    auto_reconnect: true
+    isSingleChannel: true
+    intensity_bit: 0
+    intensity: false
+    support_motor_dtr: true
+    angle_max: 180.0
+    angle_min: -180.0
+    range_max: 8.0
+    range_min: 0.1
+    frequency: 7.0
+    invalid_range_is_inf: false
+    debug: false

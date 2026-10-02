@@ -77,6 +77,47 @@ def docker_exec(container: str, args: list[str], timeout: int = 10) -> str:
 
 NO_CONTAINER = "No running ROS container found. Start the simulation/robot first."
 
+# diff_drive_controller stops the wheels if no cmd_vel arrives for 0.5s
+# (cmd_vel_timeout), so motion must be streamed continuously, not sent once.
+CMD_VEL_RATE_HZ = 20
+MAX_ANGULAR = 1.0  # rad/s, matches angular.z.max_velocity
+MAX_LINEAR = 0.5   # m/s, kept below linear.x.max_velocity for safety
+
+# Runs inside the container: stream a Twist on /cmd_vel for a fixed duration,
+# then send zeros. argv: linear_x angular_z duration_s rate_hz
+DRIVE_SCRIPT = """
+import sys, time, rclpy
+from geometry_msgs.msg import Twist
+lin, ang, dur, rate = map(float, sys.argv[1:5])
+rclpy.init()
+node = rclpy.create_node('mcp_drive')
+pub = node.create_publisher(Twist, '/cmd_vel', 10)
+t0 = time.time()
+while pub.get_subscription_count() == 0 and time.time() - t0 < 3.0:
+    time.sleep(0.05)
+if pub.get_subscription_count() == 0:
+    print('No subscriber on /cmd_vel - is the robot launch running?'); sys.exit(1)
+msg = Twist(); msg.linear.x = lin; msg.angular.z = ang
+end = time.time() + dur
+while time.time() < end:
+    pub.publish(msg); time.sleep(1.0 / rate)
+for _ in range(5):
+    pub.publish(Twist()); time.sleep(0.05)
+print(f'Done: linear={lin} m/s angular={ang} rad/s for {dur:.2f}s')
+"""
+
+
+def drive(linear: float, angular: float, duration: float) -> str:
+    container = get_container()
+    if not container:
+        return NO_CONTAINER
+    return docker_exec(
+        container,
+        ["python3", "-c", DRIVE_SCRIPT, str(linear), str(angular),
+         str(duration), str(CMD_VEL_RATE_HZ)],
+        timeout=int(duration) + 20,
+    )
+
 
 # ── TOOLS ─────────────────────────────────────────────────────────────────────
 
@@ -113,12 +154,41 @@ def sim_start(use_nav2: bool = True, use_slam: bool = False, use_dock: bool = Tr
 
 
 @mcp.tool()
+def rotate(direction: str = "left", angle_deg: float = 90.0, speed: float = 0.5) -> str:
+    """Rotate / turn the robot in place.
+    direction: 'left' (counter-clockwise) or 'right' (clockwise).
+    angle_deg: how far to turn in degrees (e.g. 90, 180, 360).
+    speed: turn rate in rad/s (0.1 to 1.0)."""
+    sign = -1.0 if direction.strip().lower() in ("right", "clockwise", "cw") else 1.0
+    speed = max(0.1, min(abs(speed), MAX_ANGULAR))
+    # The controller's accel/decel limits are symmetric, so the angle covered
+    # is speed * commanded time (ramp-up loss equals ramp-down overrun).
+    duration = math.radians(abs(angle_deg)) / speed
+    return drive(0.0, sign * speed, duration)
+
+
+@mcp.tool()
+def move(distance_m: float = 0.5, speed: float = 0.2) -> str:
+    """Drive the robot straight forward (positive distance) or backward (negative distance).
+    distance_m: meters to travel. speed: m/s (0.05 to 0.5)."""
+    speed = max(0.05, min(abs(speed), MAX_LINEAR))
+    duration = abs(distance_m) / speed
+    return drive(math.copysign(speed, distance_m), 0.0, duration)
+
+
+@mcp.tool()
+def stop_robot() -> str:
+    """Stop the robot's motion immediately (zero velocity). Use this for
+    'stop', 'halt', 'stop moving', 'stop rotating', 'brake', 'freeze'."""
+    return drive(0.0, 0.0, 0.3)
+
+
+@mcp.tool()
 def sim_stop() -> str:
-    """Stop, shut down, bring down, kill, or halt the simulation and all containers.
-    Use this whenever the user says: stop, stop sim, stop all sim, stop simulation,
-    shut down, bring down, bring down sim, kill, kill sim, kill all, kill all nodes,
-    kill nodes, kill everything, close, terminate, stop all, down all, stop the launch,
-    bring the launch file down, exit simulation, or similar."""
+    """Shut down the simulation by stopping all ROS docker containers.
+    Only use this when the user explicitly asks to stop/kill/shut down the
+    SIMULATION, containers, or launch (e.g. 'stop sim', 'kill all nodes',
+    'bring down the launch'). For 'stop' / 'halt' about robot motion use stop_robot."""
     ps = subprocess.run(
         ["docker", "ps", "--format", "{{.Names}}"],
         capture_output=True, text=True,
