@@ -10,8 +10,11 @@ DOCK_ID = 'home_dock'
 def main():
     rclpy.init()
     navigator = BasicNavigator()
-    navigator.waitUntilNav2Active()
 
+    # Wait for the docking action server directly instead of waitUntilNav2Active()
+    # which does cross-container lifecycle service calls that can time out.
+    navigator.info('Waiting for docking_server action...')
+    navigator.docking_client.wait_for_server()
     navigator.info(f'Docking at: {DOCK_ID}')
     navigator.dockRobotByID(DOCK_ID)
 

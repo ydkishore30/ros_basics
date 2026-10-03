@@ -13,7 +13,7 @@ def generate_launch_description():
         executable='apriltag_node',
         name='apriltag',
         output='screen',
-        parameters=[apriltag_params],
+        parameters=[apriltag_params, {'use_sim_time': True}],
         remappings=[
             ('image_rect', '/camera/image_raw'),
             ('camera_info', '/camera/camera_info'),
@@ -25,6 +25,7 @@ def generate_launch_description():
         executable='dock_pose_publisher',
         name='dock_pose_publisher',
         output='screen',
+        parameters=[{'use_sim_time': True}],
     )
 
     return LaunchDescription([

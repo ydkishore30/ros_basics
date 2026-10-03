@@ -210,11 +210,39 @@
       <direction>0.1 0.1 -1</direction>
     </light>
 
-    <include>
-      <uri>model://apriltag_dock_marker</uri>
-      <name>dock_marker</name>
-      <pose>2.0 0.0 0.2 0 0 3.14159</pose>
-    </include>
+    <model name="dock_marker">
+      <static>true</static>
+      <pose>2.5 0.0 0.30 0 0 3.14159</pose>
+      <link name="link">
+        <visual name="tag_face">
+          <geometry>
+            <box><size>0.01 0.162 0.162</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>/ros2_ws/install/my_robot_description/share/my_robot_description/worlds/sample_blender/apriltag_dock_marker/materials/textures/tag36h11_0.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+        <visual name="backing_plate">
+          <pose>-0.006 0 0 0 0 0</pose>
+          <geometry>
+            <box><size>0.01 0.25 0.25</size></box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
 
   </world>
 </sdf>
