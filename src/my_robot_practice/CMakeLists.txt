@@ -26,6 +26,10 @@ add_executable(battery_monitor src/battery_monitor.cpp)
 ament_target_dependencies(battery_monitor rclcpp my_robot_interfaces)
 install(TARGETS battery_monitor DESTINATION lib/${PROJECT_NAME})
 
+add_executable(battery_client src/battery_client.cpp)
+ament_target_dependencies(battery_client rclcpp my_robot_interfaces)
+install(TARGETS battery_client DESTINATION lib/${PROJECT_NAME})
+
 add_executable(count_listener src/count_listener.cpp)
 ament_target_dependencies(count_listener rclcpp std_msgs)
 install(TARGETS count_listener DESTINATION lib/${PROJECT_NAME})
