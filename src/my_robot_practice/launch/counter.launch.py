@@ -20,8 +20,8 @@ def generate_launch_description():
     count_listener = Node(
         package='my_robot_practice',
         executable='count_listener',
-        name='count_listener_node',
+        name='count_listener',   # must match the key in params.yaml
         parameters=[config],
     )
 
-    return LaunchDescription([hello])   # TODO: రెండోది కలపండి
+    return LaunchDescription([hello, count_listener])

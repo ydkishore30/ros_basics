@@ -45,7 +45,7 @@ add_executable(charger_client src/charger_client.cpp)
 ament_target_dependencies(charger_client rclcpp my_robot_interfaces rclcpp_action)
 install(TARGETS charger_client DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
