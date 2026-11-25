@@ -14,9 +14,12 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(my_robot_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(rclcpp_action REQUIRED)
 add_executable(hello_node src/hello_node.cpp)
+
 ament_target_dependencies(hello_node rclcpp std_msgs)
 install(TARGETS hello_node DESTINATION lib/${PROJECT_NAME})
+
 
 add_executable(battery_node src/battery.cpp)
 ament_target_dependencies(battery_node rclcpp my_robot_interfaces std_srvs)
@@ -33,6 +36,10 @@ install(TARGETS battery_client DESTINATION lib/${PROJECT_NAME})
 add_executable(count_listener src/count_listener.cpp)
 ament_target_dependencies(count_listener rclcpp std_msgs)
 install(TARGETS count_listener DESTINATION lib/${PROJECT_NAME})
+
+add_executable(charger_server src/charger_server.cpp)
+ament_target_dependencies(charger_server rclcpp my_robot_interfaces rclcpp_action)
+install(TARGETS charger_server DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

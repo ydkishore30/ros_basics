@@ -1,0 +1,9 @@
+# Goal
+int32 target_percentage
+---
+# Result
+bool success
+int32 final_percentage
+---
+# Feedback
+int32 current_percentage
