@@ -1,0 +1,9 @@
+hello_node:
+  ros__parameters:
+    period_ms: 500
+
+# TODO: count_listener కి timeout_sec: 3.0 ఇలాగే రాయండి
+count_listener:
+  ros__parameters:
+    timeout_sec: 3.0
+    
