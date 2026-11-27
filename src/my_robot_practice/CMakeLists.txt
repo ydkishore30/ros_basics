@@ -45,6 +45,10 @@ add_executable(charger_client src/charger_client.cpp)
 ament_target_dependencies(charger_client rclcpp my_robot_interfaces rclcpp_action)
 install(TARGETS charger_client DESTINATION lib/${PROJECT_NAME})
 
+add_executable(temperature_sensor src/temperature_sensor.cpp)
+ament_target_dependencies(temperature_sensor rclcpp my_robot_interfaces)
+install(TARGETS temperature_sensor DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

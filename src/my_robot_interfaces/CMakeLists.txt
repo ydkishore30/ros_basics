@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BatteryStatus.msg"
   "srv/SetChargeLevel.srv"
   "action/ChargeBattery.action"
+  "msg/Temperature.msg"
 
 )
 
