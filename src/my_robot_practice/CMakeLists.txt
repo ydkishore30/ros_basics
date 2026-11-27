@@ -53,6 +53,10 @@ add_executable(temperature_monitor src/temperature_monitor.cpp)
 ament_target_dependencies(temperature_monitor rclcpp my_robot_interfaces)
 install(TARGETS temperature_monitor DESTINATION lib/${PROJECT_NAME})
 
+add_executable(config_publisher src/config_publisher.cpp)
+ament_target_dependencies(config_publisher rclcpp std_msgs)
+install(TARGETS config_publisher DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

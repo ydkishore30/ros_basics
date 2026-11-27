@@ -9,9 +9,9 @@ public:
     temperature_sensor() : Node("temperature_sensor")
     {
         RCLCPP_INFO(this->get_logger(), "Temperature Sensor Node has been started.");
-
+        auto qos = rclcpp::QoS(10).best_effort();
         // Create a publisher to the "temperature" topic
-        publisher_ = this->create_publisher<my_robot_interfaces::msg::Temperature>("temperature", 1);
+        publisher_ = this->create_publisher<my_robot_interfaces::msg::Temperature>("temperature", qos);
         warm_threshold_ = declare_parameter<double>("warm_threshold", 35.0);
         hot_threshold_ = declare_parameter<double>("hot_threshold", 38.0);
         timer_ = this->create_wall_timer(

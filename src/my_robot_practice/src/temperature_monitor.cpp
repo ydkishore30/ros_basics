@@ -9,10 +9,10 @@ public:
     temperature_sensor() : Node("temperature_monitor")
     {
         RCLCPP_INFO(this->get_logger(), "Temperature Monitor Node has been started.");
-
+        auto qos = rclcpp::SensorDataQoS();  // Use SensorData QoS for sensor data
         // Create a subscription to the "temperature" topic
         subscription_ = this->create_subscription<my_robot_interfaces::msg::Temperature>(
-            "temperature", 1, [this](const my_robot_interfaces::msg::Temperature::SharedPtr msg) {
+            "temperature", qos, [this](const my_robot_interfaces::msg::Temperature::SharedPtr msg) {
 
                 if (msg->status == last_status_) {
                     return;   // మారలేదు, log చేయకు
