@@ -49,6 +49,10 @@ add_executable(temperature_sensor src/temperature_sensor.cpp)
 ament_target_dependencies(temperature_sensor rclcpp my_robot_interfaces)
 install(TARGETS temperature_sensor DESTINATION lib/${PROJECT_NAME})
 
+add_executable(temperature_monitor src/temperature_monitor.cpp)
+ament_target_dependencies(temperature_monitor rclcpp my_robot_interfaces)
+install(TARGETS temperature_monitor DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
