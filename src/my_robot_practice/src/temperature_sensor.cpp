@@ -34,11 +34,7 @@ public:
                 else if (temperature_ <= 38.0 && temperature_ >= 35.0)
                 {
                     message.status = "WARM";
-                }
-                if(temperature_ > 38.0)
-                {
-                    message.status = "HOT";
-                }
+                }else
                 {
                     message.status = "HOT";
                 }
