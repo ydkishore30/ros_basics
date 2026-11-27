@@ -12,7 +12,8 @@ public:
 
         // Create a publisher to the "temperature" topic
         publisher_ = this->create_publisher<my_robot_interfaces::msg::Temperature>("temperature", 1);
-
+        warm_threshold_ = declare_parameter<double>("warm_threshold", 35.0);
+        hot_threshold_ = declare_parameter<double>("hot_threshold", 38.0);
         timer_ = this->create_wall_timer(
             std::chrono::seconds(1),
             [this]() {
@@ -26,12 +27,11 @@ public:
                 }
                 
 
-
-                if (temperature_ < 35.0)
+                if (temperature_ < warm_threshold_)
                 {
                     message.status = "NORMAL";
                 }
-                else if (temperature_ <= 38.0 && temperature_ >= 35.0)
+                else if (temperature_ <= hot_threshold_ && temperature_ >= warm_threshold_)
                 {
                     message.status = "WARM";
                 }else
@@ -40,6 +40,7 @@ public:
                 }
                 message.celsius = temperature_;
                 // message.temperature = temperature_;
+                
                 RCLCPP_INFO(this->get_logger(), "Publishing: %.2f C | %s", message.celsius, message.status.c_str());
 
                 publisher_->publish(message);
@@ -52,6 +53,8 @@ private:
     rclcpp::Publisher<my_robot_interfaces::msg::Temperature>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     double temperature_{25.0};  // Initial temperature
+    double warm_threshold_{35.0};
+    double hot_threshold_{38.0};    
 };
 
 int main(int argc, char * argv[])

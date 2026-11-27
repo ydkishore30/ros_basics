@@ -1,0 +1,4 @@
+temperature_sensor:
+  ros__parameters:
+    warm_threshold: 30.0
+    hot_threshold: 36.5

@@ -19,11 +19,11 @@ public:
                 }
                 last_status_ = msg->status;
 
-                if (msg->celsius > 38.0)
+                if (msg->status == "HOT")
                 {
                     RCLCPP_ERROR(this->get_logger(), "Temperature is HOT: %.2f C | %s", msg->celsius, msg->status.c_str());
                 }
-                else if (msg->celsius >= 35.0 && msg->celsius <= 38.0)
+                else if (msg->status == "WARM")
                 {
                     RCLCPP_WARN(this->get_logger(), "Temperature is WARM: %.2f C | %s", msg->celsius, msg->status.c_str());
                 }
