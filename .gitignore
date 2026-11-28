@@ -11,3 +11,8 @@ env/
 *.key
 *.core
 .claude/
+
+# ROS bags
+bag/
+*.mcap
+*.db3
