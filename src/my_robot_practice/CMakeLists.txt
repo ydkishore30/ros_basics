@@ -65,6 +65,10 @@ add_executable(zero_copy_demo src/zero_copy_demo.cpp)
 ament_target_dependencies(zero_copy_demo rclcpp std_msgs)
 install(TARGETS zero_copy_demo DESTINATION lib/${PROJECT_NAME})
 
+add_executable(multi_demo src/multi_demo.cpp)
+ament_target_dependencies(multi_demo rclcpp)
+install(TARGETS multi_demo DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
