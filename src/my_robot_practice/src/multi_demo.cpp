@@ -1,5 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
-
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 class MultiDemoNode : public rclcpp::Node
 {
@@ -18,8 +21,9 @@ public:
                 // std::this_thread::sleep_for(std::chrono::seconds(2));
                 RCLCPP_INFO(get_logger(), "A end (thread %zu)", tid);
                 // timer_a->cancel();  // Start with the timer stopped
-                
+                std::lock_guard<std::mutex> lock(mutex_);
                 for (int i = 0; i < 1000000; i++) {
+                    // std::lock_guard<std::mutex> lock(mutex_);
                     counter_++;
                 }
                 RCLCPP_INFO(get_logger(), "A done, counter = %d", counter_);
@@ -33,7 +37,10 @@ public:
                 // std::this_thread::sleep_for(std::chrono::seconds(1));
                 RCLCPP_INFO(get_logger(), "B end (thread %zu)", tid);
                 // timer_b->cancel();  // Start with the timer stopped
+                std::lock_guard<std::mutex> lock(mutex_);
+
                 for (int i = 0; i < 1000000; i++) {
+                    // std::lock_guard<std::mutex> lock(mutex_);
                     counter_++;
                 }
                 RCLCPP_INFO(get_logger(), "B done, counter = %d", counter_);
@@ -46,6 +53,7 @@ public:
     rclcpp::CallbackGroup::SharedPtr group_a_;
     rclcpp::CallbackGroup::SharedPtr group_b_;
     int counter_{0};
+    std::mutex mutex_;
 };
 
 int main(int argc, char * argv[])
