@@ -57,6 +57,14 @@ add_executable(config_publisher src/config_publisher.cpp)
 ament_target_dependencies(config_publisher rclcpp std_msgs)
 install(TARGETS config_publisher DESTINATION lib/${PROJECT_NAME})
 
+add_executable(big_publisher src/big_publisher.cpp)
+ament_target_dependencies(big_publisher rclcpp std_msgs)
+install(TARGETS big_publisher DESTINATION lib/${PROJECT_NAME})
+
+add_executable(zero_copy_demo src/zero_copy_demo.cpp)
+ament_target_dependencies(zero_copy_demo rclcpp std_msgs)
+install(TARGETS zero_copy_demo DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
